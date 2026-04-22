@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.env
+
+# Hardhat
+cache/
+artifacts/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports
+*.json
+!package.json
+!package-lock.json
+!hardhat.config.js
