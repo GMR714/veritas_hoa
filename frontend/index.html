@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Veritas Village HOA — Dashboard 3D</title>
+  <title>Veritas Village HOA — Dashboard 3D (Voto Quadrático)</title>
   <meta name="description" content="Dashboard 3D interativo para governança do condomínio Veritas Village na rede RSK Testnet">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏘️</text></svg>">
   <link rel="stylesheet" href="css/styles.css">
@@ -30,7 +30,7 @@
   <header id="topbar">
     <div style="display:flex; align-items:center; gap: 12px;">
       <h1>🏘️ Veritas Village</h1>
-      <span class="subtitle">Sistema de Governança HOA — RSK Testnet (Chain ID 31)</span>
+      <span class="subtitle">Sistema de Governança HOA — Voto Quadrático</span>
     </div>
     <div>
       <button id="btn-connect-wallet" class="btn btn-purple" style="padding: 6px 12px; font-size: 0.85rem;">🔌 Conectar MetaMask</button>
@@ -45,16 +45,16 @@
       <h3>💰 Tesouro</h3>
       <div class="stat-row">
         <span>Saldo</span>
-        <span id="treasury-balance" class="stat-value">0.0001 RBTC</span>
+        <span id="treasury-balance" class="stat-value">0.0000 RBTC</span>
       </div>
       <div class="stat-row">
         <span>Taxa Mínima</span>
-        <span id="min-dues" class="stat-value">0.0001 RBTC</span>
+        <span id="min-dues" class="stat-value">0.0000 RBTC</span>
       </div>
     </div>
 
     <div class="section">
-      <h3>🏠 Lotes</h3>
+      <h3>🏠 Lotes & Créditos (100/ano)</h3>
       <div id="lot-cards"></div>
     </div>
 
@@ -69,35 +69,49 @@
     <h2>🗳️ Governança</h2>
 
     <div class="tabs">
-      <button class="tab active" data-tab="proposal">📝 Proposta</button>
-      <button class="tab" data-tab="delegation">🤝 Delegação</button>
-      <button class="tab" data-tab="voting">🗳️ Votação</button>
+      <button class="tab active" data-tab="ideas">💡 Ideias</button>
+      <button class="tab" data-tab="proposals">📝 Propostas</button>
       <button class="tab" data-tab="audit">🔍 Malha Fina</button>
     </div>
 
-    <!-- Tab: Proposta -->
-    <div id="tab-proposal" class="tab-content active">
-      <input type="text" id="proposal-title" placeholder="Ex: Construção de Piscina Comunitária">
-      <textarea id="proposal-desc" placeholder="Descreva a proposta em detalhes..."></textarea>
-      <button id="btn-create-proposal" class="btn btn-blue full-width">📝 Criar Proposta</button>
+    <!-- Tab: Ideias -->
+    <div id="tab-ideas" class="tab-content active">
+      <div class="section-box" style="margin-bottom: 16px;">
+        <h4>Nova Ideia</h4>
+        <input type="text" id="idea-title" placeholder="Ex: Construção de Piscina Comunitária">
+        <textarea id="idea-desc" placeholder="Descreva a ideia em detalhes..."></textarea>
+        <div style="display: flex; gap: 8px;">
+          <select id="idea-proposer-lot" style="flex: 1; padding: 8px; border-radius: 4px; background: #263238; color: white; border: 1px solid #455a64;">
+            <option value="0">Propor como Lote #1</option>
+            <option value="1">Propor como Lote #2</option>
+            <option value="2">Propor como Lote #3</option>
+          </select>
+          <button id="btn-submit-idea" class="btn btn-blue">💡 Enviar</button>
+        </div>
+      </div>
+      <h4>Cesta de Ideias (Voto Quadrático)</h4>
+      <div id="ideas-list">
+        <p class="muted">Nenhuma ideia submetida ainda.</p>
+      </div>
     </div>
 
-    <!-- Tab: Delegação -->
-    <div id="tab-delegation" class="tab-content">
-      <p class="muted-small">Delegue seu poder de voto a alguém de confiança. Após a votação, você pode revisar e revogar.</p>
-      <div id="delegation-section"></div>
-    </div>
-
-    <!-- Tab: Votação -->
-    <div id="tab-voting" class="tab-content">
+    <!-- Tab: Propostas -->
+    <div id="tab-proposals" class="tab-content">
+      <div class="section-box council-only" style="margin-bottom: 16px; border: 1px solid var(--gold); border-radius: 8px; padding: 12px;">
+        <h4 style="color: var(--gold); margin-top: 0;">👑 Conselho: Criar Proposta Oficial</h4>
+        <input type="text" id="proposal-title" placeholder="Título da Proposta Oficial">
+        <textarea id="proposal-desc" placeholder="Descrição baseada na ideia mais votada..."></textarea>
+        <button id="btn-create-proposal" class="btn btn-gold full-width">📝 Criar Proposta</button>
+      </div>
+      <h4>Votação Ativa (Voto Quadrático)</h4>
       <div id="voting-section">
-        <p class="muted">Crie uma proposta primeiro.</p>
+        <p class="muted">Nenhuma proposta ativa.</p>
       </div>
     </div>
 
     <!-- Tab: Malha Fina -->
     <div id="tab-audit" class="tab-content">
-      <p class="muted-small">Analisa os votos e cruza com status de pagamento para identificar irregularidades.</p>
+      <p class="muted-small">Analisa os votos (ideias e propostas) e cruza com status de pagamento para identificar irregularidades e abater votos inadimplentes.</p>
       <button id="btn-malha-fina" class="btn btn-red full-width" disabled>🔍 Executar Varredura</button>
       <div id="audit-results"></div>
     </div>

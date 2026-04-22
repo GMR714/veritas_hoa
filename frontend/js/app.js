@@ -25,16 +25,18 @@ const contracts = {};
 
 const state = {
   lots: [
-    { id: 1, owner: '0x1F24...dF51', delinquent: false, lastPaid: Date.now() / 1000, voted: false, voteChoice: 0, delegatedTo: null, votedByDelegate: false, delegateVoteChoice: 0, wasOverridden: false },
-    { id: 2, owner: '0x1F24...dF51', delinquent: true,  lastPaid: 0, voted: false, voteChoice: 0, delegatedTo: null, votedByDelegate: false, delegateVoteChoice: 0, wasOverridden: false },
-    { id: 3, owner: '0x1F24...dF51', delinquent: true,  lastPaid: 0, voted: false, voteChoice: 0, delegatedTo: null, votedByDelegate: false, delegateVoteChoice: 0, wasOverridden: false },
+    { id: 1, owner: '0x1F24...dF51', delinquent: false, lastPaid: Date.now() / 1000, creditsSpent: 0, votedIdea: false },
+    { id: 2, owner: '0x1F24...dF51', delinquent: true,  lastPaid: 0, creditsSpent: 0, votedIdea: false },
+    { id: 3, owner: '0x1F24...dF51', delinquent: true,  lastPaid: 0, creditsSpent: 0, votedIdea: false },
   ],
   treasury: { balance: 0.0001, minDues: 0.0001 },
-  proposal: null,
+  ideas: [], // { id, title, description, proposer, qvVotes, votesAllocated: { lotIdx: votes } }
+  proposal: null, // { id, title, description, votesFor, votesAgainst, votesAbstain, votesAllocated: { lotIdx: votes }, voteChoice: { lotIdx: choice } }
   malhaFinaComplete: false,
-  inReviewPeriod: false,
   selectedLotIndex: null,
 };
+
+const CREDITS_PER_YEAR = 100;
 
 // ═══════════════════════════════════════════════════════════════
 //  THREE.JS GLOBALS
@@ -46,16 +48,15 @@ const houses = [];      // { group, glowOrb, glowLight, walls }
 let townHallGroup;
 let fireflies;
 const activeAnimations = [];
-const delegationLines = [];  // 3D lines showing delegation links
 const labels = [];           // HTML elements
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let hoveredHouseIdx = null;
 
 const HOUSE_CONFIGS = [
-  { wallColor: 0xffcc80, roofColor: 0xbf360c, pos: new THREE.Vector3(-6, 0, 6) },  // Vibrant Amber
-  { wallColor: 0x81d4fa, roofColor: 0x01579b, pos: new THREE.Vector3(0, 0, 8.5) }, // Vibrant Blue
-  { wallColor: 0xc5e1a5, roofColor: 0x33691e, pos: new THREE.Vector3(6, 0, 6) },  // Vibrant Green
+  { wallColor: 0xffcc80, roofColor: 0xbf360c, pos: new THREE.Vector3(-6, 0, 6) },
+  { wallColor: 0x81d4fa, roofColor: 0x01579b, pos: new THREE.Vector3(0, 0, 8.5) },
+  { wallColor: 0xc5e1a5, roofColor: 0x33691e, pos: new THREE.Vector3(6, 0, 6) },
 ];
 
 const TREE_POSITIONS = [
@@ -71,27 +72,23 @@ const CHOICE_LABELS = { 1: 'A FAVOR ✅', 2: 'CONTRA ❌', 3: 'ABSTENÇÃO ⏸�
 // ═══════════════════════════════════════════════════════════════
 
 function initScene() {
-  // Scene
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a2a1a); // Changed to deep green
-  scene.fog = new THREE.FogExp2(0x0a2a1a, 0.012); // Reduced from 0.025 for clarity
+  scene.background = new THREE.Color(0x0a2a1a);
+  scene.fog = new THREE.FogExp2(0x0a2a1a, 0.012);
 
-  // Camera
   camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 120);
   camera.position.set(2, 14, 22);
 
-  // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.25; // Increased for better brightness
+  renderer.toneMappingExposure = 1.25;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.getElementById('canvas-container').appendChild(renderer.domElement);
   renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
 
-  // Controls
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
@@ -103,12 +100,11 @@ function initScene() {
   controls.target.set(0, 0, 3);
   controls.addEventListener('start', () => { controls.autoRotate = false; });
 
-  // ── Lighting ──
-  scene.add(new THREE.AmbientLight(0x5a5a90, 0.85)); // Boosted further
+  scene.add(new THREE.AmbientLight(0x5a5a90, 0.85));
   scene.add(new THREE.HemisphereLight(0x6699ff, 0x223322, 0.6));
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-  dirLight.position.set(-15, 20, 20); // Moved to hit house fronts (more towards camera/left)
+  dirLight.position.set(-15, 20, 20);
   dirLight.castShadow = true;
   dirLight.shadow.mapSize.set(2048, 2048);
   dirLight.shadow.camera.near = 0.5;
@@ -125,7 +121,6 @@ function initScene() {
   scene.add(spot);
   scene.add(spot.target);
 
-  // ── Post-processing ──
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(
@@ -135,7 +130,6 @@ function initScene() {
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
-  // Resize
   window.addEventListener('resize', () => {
     const w = window.innerWidth, h = window.innerHeight;
     camera.aspect = w / h;
@@ -150,16 +144,14 @@ function initScene() {
 // ═══════════════════════════════════════════════════════════════
 
 function createGround() {
-  // Main ground
   const ground = new THREE.Mesh(
     new THREE.CircleGeometry(28, 64),
-    new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.85 }) // Lighter, vibrant grass green
+    new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.85 })
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Stone plaza
   const plaza = new THREE.Mesh(
     new THREE.CircleGeometry(5, 48),
     new THREE.MeshStandardMaterial({ color: 0x2d3a40, roughness: 0.85 })
@@ -168,7 +160,6 @@ function createGround() {
   plaza.position.y = 0.01;
   scene.add(plaza);
 
-  // Outer ring decoration
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(4.8, 5.2, 48),
     new THREE.MeshStandardMaterial({ color: 0x455a64, roughness: 0.7 })
@@ -183,21 +174,18 @@ function createHouse(config, index) {
   const wallMat = new THREE.MeshStandardMaterial({ color: config.wallColor, roughness: 0.8 });
   const roofMat = new THREE.MeshStandardMaterial({ color: config.roofColor, roughness: 0.7 });
 
-  // Walls
   const walls = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 2.2), wallMat);
   walls.position.y = 0.8;
   walls.castShadow = true;
   walls.receiveShadow = true;
   group.add(walls);
 
-  // Roof
   const roof = new THREE.Mesh(new THREE.ConeGeometry(1.85, 1.3, 4), roofMat);
   roof.position.y = 2.0;
   roof.rotation.y = Math.PI / 4;
   roof.castShadow = true;
   group.add(roof);
 
-  // Door
   const door = new THREE.Mesh(
     new THREE.BoxGeometry(0.45, 0.85, 0.06),
     new THREE.MeshStandardMaterial({ color: 0x4e342e })
@@ -205,7 +193,6 @@ function createHouse(config, index) {
   door.position.set(0, 0.42, -1.13);
   group.add(door);
 
-  // Windows (emissive — will bloom)
   const winMat = new THREE.MeshBasicMaterial({ color: 0xfff5cc });
   for (const x of [-0.55, 0.55]) {
     const win = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.32), winMat);
@@ -213,7 +200,6 @@ function createHouse(config, index) {
     group.add(win);
   }
 
-  // Chimney
   const chimney = new THREE.Mesh(
     new THREE.BoxGeometry(0.22, 0.65, 0.22),
     new THREE.MeshStandardMaterial({ color: 0x6d4c41 })
@@ -221,7 +207,6 @@ function createHouse(config, index) {
   chimney.position.set(0.55, 2.4, 0.35);
   group.add(chimney);
 
-  // Status glow orb (MeshBasicMaterial → triggers bloom)
   const statusColor = state.lots[index].delinquent ? 0xff5252 : 0x00e676;
   const glowOrb = new THREE.Mesh(
     new THREE.SphereGeometry(0.18, 12, 12),
@@ -230,17 +215,14 @@ function createHouse(config, index) {
   glowOrb.position.set(0, 2.9, 0);
   group.add(glowOrb);
 
-  // Status PointLight
   const glowLight = new THREE.PointLight(statusColor, 1.5, 6);
   glowLight.position.set(0, 1.2, -0.5);
   group.add(glowLight);
 
-  // Local Porch/Structure Light (subtle warm light to highlight house body)
   const porchLight = new THREE.PointLight(0xfff5cc, 1.2, 4.5);
   porchLight.position.set(0, 1.2, -1.2);
   group.add(porchLight);
 
-  // Position & rotate to face center
   group.position.copy(config.pos);
   group.rotation.y = Math.atan2(-config.pos.x, -config.pos.z);
 
@@ -253,38 +235,32 @@ function createTownHall() {
   const mat = new THREE.MeshStandardMaterial({ color: 0xbcc8d0, roughness: 0.55, metalness: 0.05 });
   const roofMat = new THREE.MeshStandardMaterial({ color: 0x4a5d68, roughness: 0.65 });
 
-  // Base platform
   const base = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.3, 4.2), mat);
   base.position.set(0, 0.15, 0);
   base.castShadow = true;
   base.receiveShadow = true;
   group.add(base);
 
-  // Main building
   const main = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2.6, 3.5), mat);
   main.position.set(0, 1.6, 0);
   main.castShadow = true;
   group.add(main);
 
-  // Roof
   const roof = new THREE.Mesh(new THREE.ConeGeometry(3.7, 1.4, 4), roofMat);
   roof.position.set(0, 3.6, 0);
   roof.rotation.y = Math.PI / 4;
   roof.castShadow = true;
   group.add(roof);
 
-  // Tower
   const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 1.6, 8), mat);
   tower.position.set(0, 4.6, 0);
   group.add(tower);
 
-  // Golden cap
   const capMat = new THREE.MeshStandardMaterial({ color: 0xffd740, metalness: 0.85, roughness: 0.15 });
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.65, 8), capMat);
   cap.position.set(0, 5.6, 0);
   group.add(cap);
 
-  // Golden tip orb (blooms!)
   const tipOrb = new THREE.Mesh(
     new THREE.SphereGeometry(0.1, 8, 8),
     new THREE.MeshBasicMaterial({ color: 0xffd740 })
@@ -292,7 +268,6 @@ function createTownHall() {
   tipOrb.position.set(0, 5.98, 0);
   group.add(tipOrb);
 
-  // Front columns
   const colMat = new THREE.MeshStandardMaterial({ color: 0xdde3e8, roughness: 0.45 });
   for (let i = 0; i < 4; i++) {
     const col = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 2.3, 8), colMat);
@@ -301,7 +276,6 @@ function createTownHall() {
     group.add(col);
   }
 
-  // Front steps
   for (let i = 0; i < 3; i++) {
     const step = new THREE.Mesh(
       new THREE.BoxGeometry(3.2 - i * 0.2, 0.14, 0.35),
@@ -312,7 +286,6 @@ function createTownHall() {
     group.add(step);
   }
 
-  // Glowing windows
   const winMat = new THREE.MeshBasicMaterial({ color: 0xfff5cc });
   for (const x of [-0.8, 0.8]) {
     const win = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.75), winMat);
@@ -320,7 +293,6 @@ function createTownHall() {
     group.add(win);
   }
 
-  // Entrance
   const entrance = new THREE.Mesh(
     new THREE.PlaneGeometry(0.7, 1.3),
     new THREE.MeshStandardMaterial({ color: 0x263238 })
@@ -413,7 +385,6 @@ function updateLabels() {
       label.style.left = `${x}px`;
       label.style.top = `${y}px`;
 
-      // Fade out if outside frustum
       if (pos.z > 1) {
         label.style.display = 'none';
       } else {
@@ -422,24 +393,6 @@ function updateLabels() {
       }
     }
   });
-
-  updateFloatingMenu();
-}
-
-function updateFloatingMenu() {
-  const menu = document.getElementById('floating-vote-menu');
-  if (!menu) return;
-
-  const idx = state.selectedLotIndex;
-  const h = houses[idx];
-  const pos = h.group.position.clone().add(new THREE.Vector3(0, 3.5, 0));
-  pos.project(camera);
-
-  const x = (pos.x * (window.innerWidth / 2)) + (window.innerWidth / 2);
-  const y = -(pos.y * (window.innerHeight / 2)) + (window.innerHeight / 2);
-
-  menu.style.left = `${x}px`;
-  menu.style.top = `${y}px`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -480,12 +433,14 @@ function animatePayment(lotIndex) {
   }
 }
 
-function animateVote(lotIndex, choice) {
+function animateVote(lotIndex, choice, voteWeight) {
   const house = houses[lotIndex];
   const start = house.group.position.clone().add(new THREE.Vector3(0, 2.8, 0));
   const end = new THREE.Vector3(0, 4, 0);
   const color = choice === 1 ? 0x00e676 : choice === 2 ? 0xff5252 : 0x9e9e9e;
-  const count = 14;
+  
+  // More votes = more particles
+  const count = Math.min(30, 8 + voteWeight * 2);
 
   for (let i = 0; i < count; i++) {
     const p = new THREE.Mesh(
@@ -499,12 +454,61 @@ function animateVote(lotIndex, choice) {
       type: 'vote', mesh: p,
       start: start.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.3, Math.random() * 0.2, (Math.random() - 0.5) * 0.3)),
       end: end.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, Math.random() * 0.4, (Math.random() - 0.5) * 0.6)),
-      t0: performance.now() + i * 55,
+      t0: performance.now() + i * 40,
       dur: 1100,
       done: false,
     });
   }
 }
+
+function animateIdeaSubmit(lotIndex) {
+  const house = houses[lotIndex];
+  const start = house.group.position.clone().add(new THREE.Vector3(0, 2.8, 0));
+  const end = new THREE.Vector3(0, 4.5, 0); // Townhall
+  
+  const p = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0x64b5f6 }) // Light Blue
+  );
+  p.position.copy(start);
+  scene.add(p);
+
+  activeAnimations.push({
+    type: 'vote', mesh: p,
+    start: start,
+    end: end,
+    t0: performance.now(),
+    dur: 1500,
+    done: false,
+    onComplete: () => flashTownHall()
+  });
+}
+
+function animateIdeaVote(lotIndex, voteWeight) {
+  const house = houses[lotIndex];
+  const start = house.group.position.clone().add(new THREE.Vector3(0, 2.8, 0));
+  const end = new THREE.Vector3(0, 4, 0); // Townhall area
+  const count = Math.min(25, 5 + voteWeight * 2);
+
+  for (let i = 0; i < count; i++) {
+    const p = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 6, 6),
+      new THREE.MeshBasicMaterial({ color: 0x64b5f6 }) // Blue
+    );
+    p.position.copy(start);
+    scene.add(p);
+
+    activeAnimations.push({
+      type: 'vote', mesh: p,
+      start: start.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.3, Math.random() * 0.2, (Math.random() - 0.5) * 0.3)),
+      end: end.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, Math.random() * 0.4, (Math.random() - 0.5) * 0.6)),
+      t0: performance.now() + i * 40,
+      dur: 1100,
+      done: false,
+    });
+  }
+}
+
 
 function animateMalhaFina() {
   const ringMesh = new THREE.Mesh(
@@ -544,115 +548,6 @@ function flashTownHall() {
   });
 }
 
-function animateDelegation(fromIdx, toIdx) {
-  // Purple particles fly from delegator house to delegate house
-  const fromPos = houses[fromIdx].group.position.clone().add(new THREE.Vector3(0, 2.5, 0));
-  const toPos = houses[toIdx].group.position.clone().add(new THREE.Vector3(0, 2.5, 0));
-  const count = 12;
-
-  for (let i = 0; i < count; i++) {
-    const p = new THREE.Mesh(
-      new THREE.SphereGeometry(0.065, 6, 6),
-      new THREE.MeshBasicMaterial({ color: 0xb388ff })
-    );
-    p.position.copy(fromPos);
-    scene.add(p);
-
-    activeAnimations.push({
-      type: 'vote', mesh: p,
-      start: fromPos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.3, Math.random() * 0.2, (Math.random() - 0.5) * 0.3)),
-      end: toPos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.3, Math.random() * 0.2, (Math.random() - 0.5) * 0.3)),
-      t0: performance.now() + i * 70,
-      dur: 1200,
-      done: false,
-    });
-  }
-}
-
-function animateDelegatedVote(delegateIdx, choice) {
-  // Vote particles from delegate house to town hall — lighter color
-  const start = houses[delegateIdx].group.position.clone().add(new THREE.Vector3(0, 2.8, 0));
-  const end = new THREE.Vector3(0, 4, 0);
-  const baseColor = choice === 1 ? 0x69f0ae : choice === 2 ? 0xff8a80 : 0xbdbdbd; // lighter tones
-  const count = 10;
-
-  for (let i = 0; i < count; i++) {
-    const p = new THREE.Mesh(
-      new THREE.SphereGeometry(0.05, 6, 6),
-      new THREE.MeshBasicMaterial({ color: baseColor })
-    );
-    p.position.copy(start);
-    scene.add(p);
-
-    activeAnimations.push({
-      type: 'vote', mesh: p,
-      start: start.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.3, Math.random() * 0.2, (Math.random() - 0.5) * 0.3)),
-      end: end.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, Math.random() * 0.4, (Math.random() - 0.5) * 0.6)),
-      t0: performance.now() + i * 60,
-      dur: 1100,
-      done: false,
-    });
-  }
-}
-
-function animateOverride(lotIdx, newChoice) {
-  const house = houses[lotIdx];
-  const pos = house.group.position.clone().add(new THREE.Vector3(0, 2.5, 0));
-
-  // Red flash burst
-  const burst = new THREE.Mesh(
-    new THREE.SphereGeometry(1.2, 12, 12),
-    new THREE.MeshBasicMaterial({ color: 0xff5252, transparent: true, opacity: 0.45 })
-  );
-  burst.position.copy(pos);
-  scene.add(burst);
-  activeAnimations.push({ type: 'flash', mesh: burst, t0: performance.now(), dur: 600, done: false });
-
-  // Gold particles rising (new vote)
-  setTimeout(() => {
-    const color = newChoice === 1 ? 0x00e676 : newChoice === 2 ? 0xff5252 : 0x9e9e9e;
-    for (let i = 0; i < 10; i++) {
-      const p = new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 6, 6),
-        new THREE.MeshBasicMaterial({ color })
-      );
-      p.position.copy(pos);
-      scene.add(p);
-      activeAnimations.push({
-        type: 'vote', mesh: p,
-        start: pos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.4, 0, (Math.random() - 0.5) * 0.4)),
-        end: new THREE.Vector3(0, 4.5, 0),
-        t0: performance.now() + i * 50,
-        dur: 1000,
-        done: false,
-      });
-    }
-  }, 400);
-}
-
-function updateDelegationLines() {
-  // Remove old lines
-  delegationLines.forEach(l => { scene.remove(l); l.geometry.dispose(); l.material.dispose(); });
-  delegationLines.length = 0;
-
-  // Draw new lines for active delegations
-  state.lots.forEach((lot, i) => {
-    if (lot.delegatedTo === null) return;
-    const targetIdx = state.lots.findIndex(l => l.id === lot.delegatedTo);
-    if (targetIdx === -1) return;
-
-    const from = houses[i].group.position.clone().add(new THREE.Vector3(0, 2.2, 0));
-    const to = houses[targetIdx].group.position.clone().add(new THREE.Vector3(0, 2.2, 0));
-
-    const geo = new THREE.BufferGeometry().setFromPoints([from, to]);
-    const mat = new THREE.LineDashedMaterial({ color: 0xb388ff, dashSize: 0.3, gapSize: 0.15, transparent: true, opacity: 0.55 });
-    const line = new THREE.Line(geo, mat);
-    line.computeLineDistances();
-    scene.add(line);
-    delegationLines.push(line);
-  });
-}
-
 // ═══════════════════════════════════════════════════════════════
 //  ANIMATION UPDATE
 // ═══════════════════════════════════════════════════════════════
@@ -685,7 +580,9 @@ function updateAnimations() {
         houses.forEach((h, j) => {
           if (a.alertsTriggered.has(j)) return;
           if (radius >= h.group.position.length() * 0.75) {
-            if (state.lots[j].voted && state.lots[j].delinquent) {
+            // Check if house participated in governance while delinquent
+            const participated = state.lots[j].creditsSpent > 0;
+            if (participated && state.lots[j].delinquent) {
               a.alertsTriggered.add(j);
               triggerHouseAlert(j);
             }
@@ -744,7 +641,9 @@ function updateHouseGlowPulse(time) {
 
 function renderLotCards() {
   const c = document.getElementById('lot-cards');
-  c.innerHTML = state.lots.map((lot, i) => `
+  c.innerHTML = state.lots.map((lot, i) => {
+    const remaining = CREDITS_PER_YEAR - lot.creditsSpent;
+    return `
     <div class="lot-card ${lot.delinquent ? 'delinquent' : 'current'}">
       <div class="lot-header">
         <span class="lot-id">#${lot.id}</span>
@@ -753,12 +652,14 @@ function renderLotCards() {
         </span>
       </div>
       <div class="lot-owner">${lot.owner}</div>
-      <div class="lot-date">${lot.lastPaid > 0 ? new Date(lot.lastPaid * 1000).toLocaleDateString('pt-BR') : 'Nunca pagou'}</div>
-      <button class="btn btn-small btn-gold" data-action="pay" data-index="${i}" ${!lot.delinquent ? 'disabled' : ''}>
+      <div style="font-size:0.85rem; margin-top:4px;">
+        <strong>Créditos:</strong> <span class="${remaining > 0 ? 'text-blue' : 'text-red'}">${remaining}</span>
+      </div>
+      <button class="btn btn-small btn-gold" data-action="pay" data-index="${i}" ${!lot.delinquent ? 'disabled' : ''} style="margin-top:8px;">
         💰 Pagar Taxa
       </button>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function renderComplianceBar() {
@@ -780,16 +681,62 @@ function updateTreasuryDisplay() {
   document.getElementById('min-dues').textContent = `${state.treasury.minDues.toFixed(4)} RBTC`;
 }
 
+function calculateCost(currentVotes, additionalVotes) {
+  const cCost = currentVotes * currentVotes;
+  const nCost = (currentVotes + additionalVotes) * (currentVotes + additionalVotes);
+  return nCost - cCost;
+}
+
+function renderIdeasList() {
+  const c = document.getElementById('ideas-list');
+  if (state.ideas.length === 0) { c.innerHTML = '<p class="muted">Nenhuma ideia submetida ainda.</p>'; return; }
+
+  let html = '';
+  state.ideas.forEach(idea => {
+    html += `
+      <div class="idea-card" style="background:#1e272e; padding:12px; border-radius:6px; margin-bottom:8px; border-left: 4px solid var(--blue);">
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <strong style="font-size:1.1rem;">${idea.title}</strong>
+          <span class="badge" style="background:#37474f; padding:2px 6px; border-radius:4px; font-size:0.8rem;">${idea.qvVotes} Votos</span>
+        </div>
+        <p style="font-size:0.85rem; margin:8px 0; color:#b0bec5;">${idea.description}</p>
+        <div style="font-size:0.75rem; color:#78909c; margin-bottom:8px;">Proposto pelo Lote #${idea.proposerLotId}</div>
+        
+        <div style="background:#263238; padding:8px; border-radius:4px;">
+          <div style="font-size:0.8rem; margin-bottom:4px;"><strong>Votar (Custo Quadrático):</strong></div>
+    `;
+
+    state.lots.forEach((lot, idx) => {
+      const remaining = CREDITS_PER_YEAR - lot.creditsSpent;
+      const allocated = idea.votesAllocated[idx] || 0;
+      
+      html += `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; border-bottom:1px solid #37474f; padding-bottom:4px;">
+          <span style="font-size:0.8rem;">Lote #${lot.id} (Alocado: ${allocated})</span>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <input type="number" id="idea-vote-amt-${idea.id}-${idx}" min="1" max="100" value="1" style="width:40px; padding:2px; background:#37474f; color:white; border:none; border-radius:2px; text-align:center;">
+            <button class="btn btn-small btn-blue" data-action="vote-idea" data-idea="${idea.id}" data-lot="${idx}" style="padding:2px 6px;">Adicionar</button>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div></div>`;
+  });
+
+  c.innerHTML = html;
+}
+
 function renderVotingSection() {
   const c = document.getElementById('voting-section');
-  if (!state.proposal) { c.innerHTML = '<p class="muted">Crie uma proposta primeiro.</p>'; return; }
+  if (!state.proposal) { c.innerHTML = '<p class="muted">Nenhuma proposta ativa.</p>'; return; }
 
   let html = `
-    <div class="proposal-info">
-      <div class="proposal-title">"${state.proposal.title}"</div>
-      <div class="proposal-desc">${state.proposal.description}</div>
+    <div class="proposal-info" style="margin-bottom:16px;">
+      <div class="proposal-title" style="font-size:1.2rem; font-weight:bold; color:var(--gold);">"${state.proposal.title}"</div>
+      <div class="proposal-desc" style="font-size:0.9rem; margin-top:4px;">${state.proposal.description}</div>
     </div>
-    <div class="result-bar">
+    <div class="result-bar" style="margin-bottom:16px;">
       <div class="result-item favor"><div class="count">${state.proposal.votesFor}</div><div class="label">A Favor</div></div>
       <div class="result-item contra"><div class="count">${state.proposal.votesAgainst}</div><div class="label">Contra</div></div>
       <div class="result-item abstain"><div class="count">${state.proposal.votesAbstain}</div><div class="label">Abstenção</div></div>
@@ -798,19 +745,27 @@ function renderVotingSection() {
 
   state.lots.forEach((lot, i) => {
     const badge = lot.delinquent ? 'red' : 'green';
+    const allocated = state.proposal.votesAllocated[i] || 0;
+    const existingChoice = state.proposal.voteChoice[i];
+
     html += `
-      <div class="vote-row">
-        <div class="vote-lot">
-          <span class="lot-badge ${badge}">#${lot.id}</span>
-          <span style="font-size:0.75rem">${lot.owner}</span>
+      <div class="vote-row" style="flex-direction:column; align-items:stretch; padding:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div class="vote-lot">
+            <span class="lot-badge ${badge}">#${lot.id}</span>
+            <span style="font-size:0.75rem">${lot.owner}</span>
+          </div>
+          <span style="font-size:0.8rem; color:#b0bec5;">Créditos: ${CREDITS_PER_YEAR - lot.creditsSpent} | Votos: ${allocated}</span>
         </div>
-        ${lot.voted
-          ? `<span class="vote-choice">${CHOICE_LABELS[lot.voteChoice]}</span>`
-          : `<div class="vote-buttons">
-               <button class="btn btn-small btn-green" data-action="vote" data-index="${i}" data-choice="1">A Favor</button>
-               <button class="btn btn-small btn-red"   data-action="vote" data-index="${i}" data-choice="2">Contra</button>
-             </div>`
-        }
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="number" id="prop-vote-amt-${i}" min="1" max="100" value="1" style="width:50px; padding:4px; background:#263238; color:white; border:1px solid #455a64; border-radius:4px; text-align:center;">
+          <select id="prop-vote-choice-${i}" style="flex:1; padding:4px; background:#263238; color:white; border:1px solid #455a64; border-radius:4px;" ${existingChoice ? 'disabled' : ''}>
+            <option value="1" ${existingChoice === 1 ? 'selected' : ''}>A Favor</option>
+            <option value="2" ${existingChoice === 2 ? 'selected' : ''}>Contra</option>
+            <option value="3" ${existingChoice === 3 ? 'selected' : ''}>Abster</option>
+          </select>
+          <button class="btn btn-small btn-gold" data-action="vote-proposal" data-lot="${i}">Votar</button>
+        </div>
       </div>
     `;
   });
@@ -819,46 +774,30 @@ function renderVotingSection() {
 }
 
 function showMalhaFinaResults() {
-  const flagged = state.lots.filter(l => l.voted && l.delinquent);
-  const clean   = state.lots.filter(l => l.voted && !l.delinquent);
+  const flaggedIdeas = [];
+  const flaggedProposals = [];
+  
+  state.lots.forEach(lot => {
+    if (lot.delinquent && lot.creditsSpent > 0) {
+      flaggedIdeas.push(lot); // Simplified for demo
+    }
+  });
+
   const c = document.getElementById('audit-results');
   let html = '';
 
-  if (flagged.length > 0) {
-    html += `<div class="audit-header alert">🚨 ${flagged.length} voto(s) de inadimplentes!</div>`;
-    flagged.forEach(lot => {
+  if (flaggedIdeas.length > 0) {
+    html += `<div class="audit-header alert">🚨 Abatimento de Inadimplentes!</div>`;
+    flaggedIdeas.forEach(lot => {
       html += `
         <div class="alert-item">
-          <strong>Lote #${lot.id}</strong> (${lot.owner})<br>
-          Votou "${CHOICE_LABELS[lot.voteChoice]}" mas está <span class="text-red">INADIMPLENTE</span>!<br>
-          <small>Este voto pode ser invalidado pelo regulamento.</small>
+          <strong>Lote #${lot.id}</strong> usou ${lot.creditsSpent} créditos, mas está <span class="text-red">INADIMPLENTE</span>.<br>
+          <small>Estes votos não serão contabilizados na execução final.</small>
         </div>`;
     });
-  }
-
-  if (clean.length > 0) {
-    html += `<div class="audit-header success">✅ ${clean.length} voto(s) válidos</div>`;
-    clean.forEach(lot => {
-      html += `<div class="clean-item"><strong>Lote #${lot.id}</strong> — ${CHOICE_LABELS[lot.voteChoice]} ✅</div>`;
-    });
-  }
-
-  if (state.proposal && flagged.length > 0) {
-    const adjFor = state.proposal.votesFor - flagged.filter(l => l.voteChoice === 1).length;
-    const adjAg  = state.proposal.votesAgainst - flagged.filter(l => l.voteChoice === 2).length;
-    const verdict = adjFor > adjAg ? '📢 APROVADA ✅' : adjAg > adjFor ? '📢 REJEITADA ❌' : '📢 EMPATE ⚖️ — Conselho decide';
-    html += `
-      <div class="result-section">
-        <div class="audit-header">📊 Resultado Ajustado</div>
-        <div class="result-bar">
-          <div class="result-item favor"><div class="count">${adjFor}</div><div class="label">A Favor</div></div>
-          <div class="result-item contra"><div class="count">${adjAg}</div><div class="label">Contra</div></div>
-        </div>
-        <div class="final-verdict">${verdict}</div>
-      </div>`;
-  } else if (state.proposal && flagged.length === 0) {
-    const verdict = state.proposal.votesFor > state.proposal.votesAgainst ? '📢 APROVADA ✅' : state.proposal.votesAgainst > state.proposal.votesFor ? '📢 REJEITADA ❌' : '📢 EMPATE ⚖️';
-    html += `<div class="final-verdict">${verdict}</div>`;
+  } else {
+    html += `<div class="audit-header success">✅ Todos os votos válidos</div>
+             <div class="clean-item">Nenhum voto de inadimplente detectado na cesta de ideias ou propostas.</div>`;
   }
 
   c.innerHTML = html;
@@ -908,292 +847,130 @@ function handlePay(idx) {
   animatePayment(idx);
 }
 
+function handleSubmitIdea() {
+  const title = document.getElementById('idea-title').value.trim();
+  const desc  = document.getElementById('idea-desc').value.trim();
+  const lotIdx = parseInt(document.getElementById('idea-proposer-lot').value);
+  
+  if (!title) { notify('Digite um título para a ideia!', 'warning'); return; }
+
+  const newIdea = {
+    id: state.ideas.length + 1,
+    title,
+    description: desc,
+    proposerLotId: state.lots[lotIdx].id,
+    qvVotes: 0,
+    votesAllocated: {}
+  };
+  
+  state.ideas.push(newIdea);
+  animateIdeaSubmit(lotIdx);
+  renderIdeasList();
+  
+  document.getElementById('idea-title').value = '';
+  document.getElementById('idea-desc').value = '';
+  notify(`Ideia "${title}" submetida com sucesso!`, 'success');
+}
+
+function handleVoteIdea(ideaId, lotIdx) {
+  const idea = state.ideas.find(i => i.id === ideaId);
+  const lot = state.lots[lotIdx];
+  const input = document.getElementById(`idea-vote-amt-${ideaId}-${lotIdx}`);
+  const additionalVotes = parseInt(input.value);
+
+  if (isNaN(additionalVotes) || additionalVotes <= 0) return;
+
+  const currentVotes = idea.votesAllocated[lotIdx] || 0;
+  const cost = calculateCost(currentVotes, additionalVotes);
+  
+  if (lot.creditsSpent + cost > CREDITS_PER_YEAR) {
+    notify(`Lote #${lot.id} não possui créditos suficientes (Precisa de ${cost}, tem ${CREDITS_PER_YEAR - lot.creditsSpent})!`, 'error');
+    return;
+  }
+
+  lot.creditsSpent += cost;
+  idea.votesAllocated[lotIdx] = currentVotes + additionalVotes;
+  idea.qvVotes += additionalVotes;
+
+  animateIdeaVote(lotIdx, additionalVotes);
+  renderLotCards();
+  renderIdeasList();
+  notify(`Lote #${lot.id} adicionou ${additionalVotes} voto(s) à ideia "${idea.title}" (Custo: ${cost} créditos)`, 'info');
+}
+
 function handleCreateProposal() {
   const title = document.getElementById('proposal-title').value.trim();
   const desc  = document.getElementById('proposal-desc').value.trim();
   if (!title) { notify('Digite um título para a proposta!', 'warning'); return; }
 
   state.proposal = {
-    title, description: desc || 'Sem descrição.',
+    id: 1,
+    title, 
+    description: desc || 'Sem descrição.',
     votesFor: 0, votesAgainst: 0, votesAbstain: 0,
+    votesAllocated: {},
+    voteChoice: {},
     createdAt: Date.now(),
   };
 
-  // Reset votes & audit
-  state.lots.forEach(l => { l.voted = false; l.voteChoice = 0; l.votedByDelegate = false; l.delegateVoteChoice = 0; l.wasOverridden = false; });
   state.malhaFinaComplete = false;
-  state.inReviewPeriod = false;
   document.getElementById('audit-results').innerHTML = '';
   document.getElementById('btn-malha-fina').disabled = false;
 
   flashTownHall();
-  renderVotingSectionPatched();
-  renderDelegationSection();
-  switchTab('voting');
-  notify(`Proposta "${title}" criada com sucesso!`, 'success');
+  renderVotingSection();
+  switchTab('proposals');
+  notify(`Proposta Oficial "${title}" criada!`, 'success');
 }
 
-function handleVote(idx, choice) {
-  const lot = state.lots[idx];
-  if (lot.voted) { notify(`Lote #${lot.id} já votou!`, 'warning'); return; }
-  if (!state.proposal) { notify('Crie uma proposta primeiro!', 'warning'); return; }
+function handleVoteProposal(lotIdx) {
+  const lot = state.lots[lotIdx];
+  const inputAmt = document.getElementById(`prop-vote-amt-${lotIdx}`);
+  const selectChoice = document.getElementById(`prop-vote-choice-${lotIdx}`);
+  
+  const additionalVotes = parseInt(inputAmt.value);
+  const choice = parseInt(selectChoice.value);
 
-  lot.voted = true;
-  lot.voteChoice = choice;
-  if (choice === 1) state.proposal.votesFor++;
-  else if (choice === 2) state.proposal.votesAgainst++;
-  else state.proposal.votesAbstain++;
+  if (isNaN(additionalVotes) || additionalVotes <= 0) return;
+  if (!state.proposal) return;
 
-  animateVote(idx, choice);
+  const existingChoice = state.proposal.voteChoice[lotIdx];
+  if (existingChoice && existingChoice !== choice) {
+    notify('Você só pode adicionar peso à sua escolha inicial.', 'error');
+    return;
+  }
 
-  // Cascade vote to all delegators
-  let delegatedCount = 0;
-  state.lots.forEach((delegateLot, i) => {
-    if (delegateLot.delegatedTo === lot.id && !delegateLot.voted) {
-      delegateLot.voted = true;
-      delegateLot.voteChoice = choice;
-      delegateLot.votedByDelegate = true;
-      delegateLot.delegateVoteChoice = choice;
-      
-      if (choice === 1) state.proposal.votesFor++;
-      else if (choice === 2) state.proposal.votesAgainst++;
-      else state.proposal.votesAbstain++;
+  const currentVotes = state.proposal.votesAllocated[lotIdx] || 0;
+  const cost = calculateCost(currentVotes, additionalVotes);
 
-      animateDelegatedVote(idx, choice);
-      delegatedCount++;
-    }
-  });
+  if (lot.creditsSpent + cost > CREDITS_PER_YEAR) {
+    notify(`Lote #${lot.id} não possui créditos suficientes! (Custo: ${cost})`, 'error');
+    return;
+  }
 
-  setTimeout(() => {
-    renderVotingSectionPatched();
-    renderDelegationSection();
-    if (delegatedCount > 0) {
-      notify(`Lote #${lot.id} votou ${CHOICE_LABELS[choice]} (e +${delegatedCount} voto(s) delegado(s)!)`, choice === 1 ? 'success' : choice === 2 ? 'error' : 'info');
-    } else {
-      notify(`Lote #${lot.id} votou ${CHOICE_LABELS[choice]}`, choice === 1 ? 'success' : choice === 2 ? 'error' : 'info');
-    }
-  }, 1200);
+  lot.creditsSpent += cost;
+  state.proposal.votesAllocated[lotIdx] = currentVotes + additionalVotes;
+  state.proposal.voteChoice[lotIdx] = choice;
+
+  if (choice === 1) state.proposal.votesFor += additionalVotes;
+  else if (choice === 2) state.proposal.votesAgainst += additionalVotes;
+  else state.proposal.votesAbstain += additionalVotes;
+
+  animateVote(lotIdx, choice, additionalVotes);
+  renderLotCards();
+  renderVotingSection();
+  notify(`Lote #${lot.id} casted ${additionalVotes} voto(s) ${CHOICE_LABELS[choice]} (Custo: ${cost} créditos)`, choice === 1 ? 'success' : choice === 2 ? 'error' : 'info');
 }
 
 function handleMalhaFina() {
-  if (!state.proposal) { notify('Crie uma proposta primeiro!', 'warning'); return; }
-  const votedCount = state.lots.filter(l => l.voted).length;
-  if (votedCount === 0) { notify('Nenhum voto registrado!', 'warning'); return; }
-
   document.getElementById('btn-malha-fina').disabled = true;
   notify('🔍 Iniciando varredura de integridade...', 'info');
   animateMalhaFina();
-
-  setTimeout(() => {
-    const flagged = state.lots.filter(l => l.voted && l.delinquent).length;
-    if (flagged > 0) notify(`🚨 ${flagged} voto(s) de inadimplentes detectados!`, 'error');
-    else notify('✅ Todos os votos são de moradores adimplentes!', 'success');
-  }, 3500);
 }
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${name}`));
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  DELEGATION UI & HANDLERS
-// ═══════════════════════════════════════════════════════════════
-
-function renderDelegationSection() {
-  const c = document.getElementById('delegation-section');
-  let html = '';
-
-  // Delegation controls for each lot
-  state.lots.forEach((lot, i) => {
-    const hasDelegation = lot.delegatedTo !== null;
-    const targetLot = hasDelegation ? state.lots.find(l => l.id === lot.delegatedTo) : null;
-
-    html += `<div class="delegation-card">`;
-    html += `<div class="delegation-header">
-      <span class="lot-id">#${lot.id}</span>
-      ${hasDelegation
-        ? `<span class="delegation-badge active">🤝 DELEGADO</span>`
-        : `<span class="delegation-badge" style="opacity:0.4">SEM DELEGAÇÃO</span>`
-      }
-    </div>`;
-
-    if (hasDelegation && targetLot) {
-      html += `<div class="delegation-arrow">
-        <span>Lote #${lot.id}</span>
-        <span class="arrow">→</span>
-        <span>Lote #${targetLot.id} (${targetLot.owner})</span>
-      </div>`;
-
-      // Show delegated vote if in review period
-      if (state.inReviewPeriod && lot.votedByDelegate && !lot.wasOverridden) {
-        html += `<div class="delegated-vote-reveal">
-          👀 O delegado votou: <strong>${CHOICE_LABELS[lot.delegateVoteChoice]}</strong>
-          <div class="override-section">
-            <button class="btn btn-small btn-green" data-action="override" data-index="${i}" data-choice="1">⚡ Mudar p/ A Favor</button>
-            <button class="btn btn-small btn-red" data-action="override" data-index="${i}" data-choice="2" style="margin-left:4px">⚡ Mudar p/ Contra</button>
-          </div>
-        </div>`;
-      } else if (lot.wasOverridden) {
-        html += `<div class="delegation-info text-green">✅ Voto foi corrigido para: ${CHOICE_LABELS[lot.voteChoice]}</div>`;
-      } else if (lot.votedByDelegate) {
-        html += `<div class="delegation-info">🗳️ Delegado já votou nesta proposta</div>`;
-      }
-
-      html += `<div style="display:flex;gap:4px;margin-top:6px">
-        <button class="btn btn-small btn-outline" data-action="revoke-delegation" data-index="${i}">🚫 Revogar Permanente</button>
-      </div>`;
-    } else {
-      // Show delegation setup — pick a target lot
-      const otherLots = state.lots.filter(l => l.id !== lot.id);
-      html += `<div style="display:flex;gap:4px;margin-top:4px">`;
-      otherLots.forEach(target => {
-        html += `<button class="btn btn-small btn-purple" data-action="delegate" data-index="${i}" data-target="${target.id}">→ Lote #${target.id}</button>`;
-      });
-      html += `</div>`;
-    }
-
-    html += `</div>`;
-  });
-
-  // Review period toggle (for demo)
-  if (state.proposal && state.lots.some(l => l.votedByDelegate && !l.wasOverridden)) {
-    html += `<div style="margin-top:12px">`;
-    if (!state.inReviewPeriod) {
-      html += `<button id="btn-start-review" class="btn btn-gold full-width">⏰ Simular Período de Revisão</button>`;
-    } else {
-      html += `<div class="review-timer">⏰ Período de revisão ativo — 24h para revisar votos delegados</div>`;
-    }
-    html += `</div>`;
-  }
-
-  c.innerHTML = html;
-}
-
-function handleDelegate(fromIdx, targetLotId) {
-  const lot = state.lots[fromIdx];
-  lot.delegatedTo = targetLotId;
-
-  const targetIdx = state.lots.findIndex(l => l.id === targetLotId);
-  animateDelegation(fromIdx, targetIdx);
-  updateDelegationLines();
-  renderDelegationSection();
-  renderLotCards();
-  notify(`Lote #${lot.id} delegou voto para Lote #${targetLotId} 🤝`, 'info');
-}
-
-function handleRevokeDelegation(idx) {
-  const lot = state.lots[idx];
-  lot.delegatedTo = null;
-  updateDelegationLines();
-  renderDelegationSection();
-  renderLotCards();
-  notify(`Delegação do Lote #${lot.id} revogada permanentemente! 🚫`, 'warning');
-}
-
-function handleCastDelegatedVote(delegateIdx, ownerIdx, choice) {
-  const ownerLot = state.lots[ownerIdx];
-  if (ownerLot.voted) { notify(`Lote #${ownerLot.id} já votou!`, 'warning'); return; }
-  if (!state.proposal) { notify('Crie uma proposta primeiro!', 'warning'); return; }
-
-  ownerLot.voted = true;
-  ownerLot.voteChoice = choice;
-  ownerLot.votedByDelegate = true;
-  ownerLot.delegateVoteChoice = choice;
-  if (choice === 1) state.proposal.votesFor++;
-  else if (choice === 2) state.proposal.votesAgainst++;
-  else state.proposal.votesAbstain++;
-
-  animateDelegatedVote(delegateIdx, choice);
-  setTimeout(() => {
-    renderVotingSectionPatched();
-    renderDelegationSection();
-    notify(`Delegado votou ${CHOICE_LABELS[choice]} pelo Lote #${ownerLot.id} 🤝`, choice === 1 ? 'success' : choice === 2 ? 'error' : 'info');
-  }, 1200);
-}
-
-function handleOverride(idx, newChoice) {
-  const lot = state.lots[idx];
-  if (!lot.votedByDelegate || lot.wasOverridden) return;
-
-  const oldChoice = lot.voteChoice;
-
-  // Subtract old tally
-  if (oldChoice === 1) state.proposal.votesFor--;
-  else if (oldChoice === 2) state.proposal.votesAgainst--;
-  else state.proposal.votesAbstain--;
-
-  // Add new tally
-  if (newChoice === 1) state.proposal.votesFor++;
-  else if (newChoice === 2) state.proposal.votesAgainst++;
-  else state.proposal.votesAbstain++;
-
-  lot.voteChoice = newChoice;
-  lot.votedByDelegate = false;
-  lot.wasOverridden = true;
-
-  animateOverride(idx, newChoice);
-  setTimeout(() => {
-    renderVotingSectionPatched();
-    renderDelegationSection();
-    notify(`Lote #${lot.id} revogou voto do delegado! Novo voto: ${CHOICE_LABELS[newChoice]} ⚡`, 'warning');
-  }, 1000);
-}
-
-function handleStartReview() {
-  state.inReviewPeriod = true;
-  renderDelegationSection();
-  notify('⏰ Período de revisão iniciado! Você pode revisar votos delegados.', 'info');
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  UPDATED VOTING SECTION (shows delegation info)
-// ═══════════════════════════════════════════════════════════════
-
-function renderVotingSectionWithDelegation() {
-  const c = document.getElementById('voting-section');
-  if (!state.proposal) { c.innerHTML = '<p class="muted">Crie uma proposta primeiro.</p>'; return; }
-
-  let html = `
-    <div class="proposal-info">
-      <div class="proposal-title">"${state.proposal.title}"</div>
-      <div class="proposal-desc">${state.proposal.description}</div>
-    </div>
-    <div class="result-bar">
-      <div class="result-item favor"><div class="count">${state.proposal.votesFor}</div><div class="label">A Favor</div></div>
-      <div class="result-item contra"><div class="count">${state.proposal.votesAgainst}</div><div class="label">Contra</div></div>
-      <div class="result-item abstain"><div class="count">${state.proposal.votesAbstain}</div><div class="label">Abstenção</div></div>
-    </div>
-  `;
-
-  state.lots.forEach((lot, i) => {
-    const badge = lot.delinquent ? 'red' : 'green';
-    const delegatedLabel = lot.votedByDelegate && !lot.wasOverridden ? '<span class="delegated-label">🤝 delegado</span>' : '';
-    const overriddenLabel = lot.wasOverridden ? '<span class="delegated-label" style="color:var(--gold)">⚡ corrigido</span>' : '';
-
-    html += `
-      <div class="vote-row">
-        <div class="vote-lot">
-          <span class="lot-badge ${badge}">#${lot.id}</span>
-          <span style="font-size:0.75rem">${lot.owner}</span>
-        </div>
-        ${lot.voted
-          ? `<span class="vote-choice">${CHOICE_LABELS[lot.voteChoice]}${delegatedLabel}${overriddenLabel}</span>`
-          : lot.delegatedTo !== null
-            ? `<div class="vote-buttons">
-                 <button class="btn btn-small btn-purple" data-action="delegated-vote" data-owner="${i}" data-choice="1">🤝 A Favor</button>
-                 <button class="btn btn-small btn-purple" data-action="delegated-vote" data-owner="${i}" data-choice="2" style="background:#ce93d8">🤝 Contra</button>
-               </div>`
-            : `<div class="vote-buttons">
-                 <button class="btn btn-small btn-green" data-action="vote" data-index="${i}" data-choice="1">A Favor</button>
-                 <button class="btn btn-small btn-red"   data-action="vote" data-index="${i}" data-choice="2">Contra</button>
-               </div>`
-        }
-      </div>
-    `;
-  });
-
-  c.innerHTML = html;
 }
 
 function setupEventListeners() {
@@ -1203,172 +980,30 @@ function setupEventListeners() {
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       switchTab(tab.dataset.tab);
-      if (tab.dataset.tab !== 'voting') deselectHouse();
     });
   });
 
-  // Create proposal
+  // Ideas & Proposals
+  document.getElementById('btn-submit-idea').addEventListener('click', handleSubmitIdea);
   document.getElementById('btn-create-proposal').addEventListener('click', handleCreateProposal);
-
-  // Malha Fina
   document.getElementById('btn-malha-fina').addEventListener('click', handleMalhaFina);
 
-  // Mouse Movement & Interaction
-  window.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('click', onPointerClick);
+  // Event Delegation for generated lists
+  document.getElementById('ideas-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-action="vote-idea"]');
+    if (btn) handleVoteIdea(parseInt(btn.dataset.idea), parseInt(btn.dataset.lot));
+  });
+  
+  document.getElementById('voting-section').addEventListener('click', e => {
+    const btn = e.target.closest('[data-action="vote-proposal"]');
+    if (btn) handleVoteProposal(parseInt(btn.dataset.lot));
+  });
 
-  // Lot card actions (event delegation)
+  // Lot card actions
   document.getElementById('lot-cards').addEventListener('click', e => {
     const btn = e.target.closest('[data-action="pay"]');
     if (btn) handlePay(parseInt(btn.dataset.index));
-    
-    // Auto-select house when clicking card
-    const card = e.target.closest('.lot-card');
-    if (card) {
-      const idx = Array.from(card.parentNode.children).indexOf(card);
-      selectHouse(idx);
-    }
   });
-
-  // Sidebar Voting actions
-  document.getElementById('voting-section').addEventListener('click', e => {
-    const voteBtn = e.target.closest('[data-action="vote"]');
-    if (voteBtn) handleVote(parseInt(voteBtn.dataset.index), parseInt(voteBtn.dataset.choice));
-
-    const delegatedVoteBtn = e.target.closest('[data-action="delegated-vote"]');
-    if (delegatedVoteBtn) {
-      const ownerIdx = parseInt(delegatedVoteBtn.dataset.owner);
-      const choice = parseInt(delegatedVoteBtn.dataset.choice);
-      const ownerLot = state.lots[ownerIdx];
-      const delegateIdx = state.lots.findIndex(l => l.id === ownerLot.delegatedTo);
-      handleCastDelegatedVote(delegateIdx >= 0 ? delegateIdx : 0, ownerIdx, choice);
-    }
-  });
-
-  // Delegate actions
-  document.getElementById('delegation-section').addEventListener('click', e => {
-    const delegateBtn = e.target.closest('[data-action="delegate"]');
-    if (delegateBtn) handleDelegate(parseInt(delegateBtn.dataset.index), parseInt(delegateBtn.dataset.target));
-    const revokeBtn = e.target.closest('[data-action="revoke-delegation"]');
-    if (revokeBtn) handleRevokeDelegation(parseInt(revokeBtn.dataset.index));
-    const overrideBtn = e.target.closest('[data-action="override"]');
-    if (overrideBtn) handleOverride(parseInt(overrideBtn.dataset.index), parseInt(overrideBtn.dataset.choice));
-    if (e.target.id === 'btn-start-review') handleStartReview();
-  });
-}
-
-function onPointerMove(event) {
-  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  raycaster.setFromCamera(pointer, camera);
-  const intersects = raycaster.intersectObjects(houses.map(h => h.walls));
-
-  if (intersects.length > 0) {
-    const idx = houses.findIndex(h => h.walls === intersects[0].object);
-    if (hoveredHouseIdx !== idx) {
-      hoveredHouseIdx = idx;
-      document.body.style.cursor = 'pointer';
-    }
-  } else {
-    if (hoveredHouseIdx !== null) {
-      hoveredHouseIdx = null;
-      document.body.style.cursor = 'default';
-    }
-  }
-}
-
-function onPointerClick(event) {
-  // Don't deselect if clicking on UI
-  if (event.target.closest('.panel') || event.target.closest('.floating-vote-menu')) return;
-
-  raycaster.setFromCamera(pointer, camera);
-  const intersects = raycaster.intersectObjects(houses.map(h => h.walls));
-
-  if (intersects.length > 0) {
-    const idx = houses.findIndex(h => h.walls === intersects[0].object);
-    selectHouse(idx);
-  } else {
-    deselectHouse();
-  }
-}
-
-function selectHouse(idx) {
-  state.selectedLotIndex = idx;
-  switchTab('voting');
-  renderFloatingMenu(idx);
-  
-  // Highlight selection in sidebar (lot cards)
-  document.querySelectorAll('.lot-card').forEach((c, i) => {
-    c.style.borderColor = (i === idx) ? 'var(--blue)' : '';
-    if (i === idx) c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  });
-}
-
-function deselectHouse() {
-  state.selectedLotIndex = null;
-  const menu = document.getElementById('floating-vote-menu');
-  if (menu) menu.remove();
-  
-  document.querySelectorAll('.lot-card').forEach(c => c.style.borderColor = '');
-  controls.autoRotate = true;
-}
-
-function renderFloatingMenu(idx) {
-  const lot = state.lots[idx];
-  const oldMenu = document.getElementById('floating-vote-menu');
-  if (oldMenu) oldMenu.remove();
-
-  if (lot.voted || !state.proposal) return;
-
-  const menu = document.createElement('div');
-  menu.id = 'floating-vote-menu';
-  menu.className = 'floating-vote-menu';
-  
-  const isDelegated = lot.delegatedTo !== null;
-
-  menu.innerHTML = `
-    <button class="close-btn">&times;</button>
-    <h4>Lote #${lot.id} — Votar</h4>
-    ${isDelegated 
-      ? `
-        <button class="btn btn-purple full-width" data-choice="1">🤝 A Favor</button>
-        <button class="btn btn-purple full-width" data-choice="2" style="background:#ce93d8">🤝 Contra</button>
-      `
-      : `
-        <button class="btn btn-green full-width" data-choice="1">Votar A Favor</button>
-        <button class="btn btn-red full-width" data-choice="2">Votar Contra</button>
-      `
-    }
-  `;
-
-  document.getElementById('ui-overlay').appendChild(menu);
-
-  // Menu events
-  menu.querySelector('.close-btn').onclick = deselectHouse;
-  menu.querySelectorAll('.btn').forEach(btn => {
-    btn.onclick = () => {
-      const choice = parseInt(btn.dataset.choice);
-      if (isDelegated) {
-        const delegateIdx = state.lots.findIndex(l => l.id === lot.delegatedTo);
-        handleCastDelegatedVote(delegateIdx, idx, choice);
-      } else {
-        handleVote(idx, choice);
-      }
-      deselectHouse();
-    };
-  });
-}
-
-// Override renderVotingSection to use the delegation-aware version
-const _originalRenderVotingSection = renderVotingSection;
-function renderVotingSectionPatched() {
-  // Use delegation-aware version if any lot has a delegation
-  if (state.lots.some(l => l.delegatedTo !== null)) {
-    renderVotingSectionWithDelegation();
-  } else {
-    _originalRenderVotingSection();
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1379,14 +1014,6 @@ function animate() {
   requestAnimationFrame(animate);
   const time = clock.getElapsedTime();
   
-  // Smooth camera interpolation
-  if (state.selectedLotIndex !== null) {
-    const targetHouse = houses[state.selectedLotIndex].group.position;
-    const targetCamPoint = targetHouse.clone().add(new THREE.Vector3(4, 8, 12));
-    camera.position.lerp(targetCamPoint, 0.05);
-    controls.target.lerp(targetHouse, 0.05);
-  }
-
   controls.update();
   updateFirefliesFrame(time);
   updateHouseGlowPulse(time);
@@ -1403,7 +1030,6 @@ async function initWeb3() {
   if (window.ethereum) {
     provider = new ethers.BrowserProvider(window.ethereum);
     
-    // Automatically connect if already authorized
     const accounts = await provider.send("eth_accounts", []);
     if (accounts.length > 0) {
       await connectWallet();
@@ -1449,44 +1075,26 @@ async function syncWeb3State() {
   if (!userAddress || !contracts.treasury) return;
   
   try {
-    // Basic sync from Contracts to UI State
     const balance = await contracts.treasury.getBalance();
     const minDues = await contracts.treasury.minDuesAmount();
     state.treasury.balance = parseFloat(ethers.formatEther(balance));
     state.treasury.minDues = parseFloat(ethers.formatEther(minDues));
     updateTreasuryDisplay();
     
-    // Attempt to identify which lot the user owns
-    // Since we only have 3 lots in our visual demo, we'll brute-force check ownership of tokens 1, 2, 3
-    let ownedLotIdx = null;
     for (let i = 0; i < state.lots.length; i++) {
         const tokenId = state.lots[i].id;
         try {
             const owner = await contracts.nft.ownerOf(tokenId);
             state.lots[i].owner = owner.substring(0, 6) + '...' + owner.substring(38);
             
-            // Check delinquency
             const isDelinquent = await contracts.treasury.isDelinquent(tokenId, 30);
             state.lots[i].delinquent = isDelinquent;
-            
-            // Note: to keep demo functional and not rewrite everything just for testnet sync we just merge what is available
-            
-            if (owner.toLowerCase() === userAddress.toLowerCase()) {
-                ownedLotIdx = i;
-            }
-        } catch(e) { /* might not be minted yet */ }
+        } catch(e) {}
     }
     
     renderLotCards();
     renderComplianceBar();
-    
-    if (ownedLotIdx !== null && state.selectedLotIndex !== ownedLotIdx) {
-      // Auto-focus camera on user's house!
-      selectHouse(ownedLotIdx);
-    }
-  } catch (err) {
-    console.error("Sync error:", err);
-  }
+  } catch (err) {}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1500,8 +1108,8 @@ async function init() {
   renderLotCards();
   renderComplianceBar();
   updateTreasuryDisplay();
-  renderVotingSectionPatched();
-  renderDelegationSection();
+  renderIdeasList();
+  renderVotingSection();
   await initWeb3();
   animate();
 }
