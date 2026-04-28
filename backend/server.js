@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { ethers } = require('ethers');
-const { db, stmts, CREDITS_PER_YEAR, getCurrentYear, getRemainingCredits, spendCredits } = require('./database');
+const { db, stmts, CREDITS_PER_YEAR, getCurrentYear, getRemainingCredits, spendCredits, refundCredits } = require('./database');
 
 // ═══════════════════════════════════════════════════════════════
 //  CONFIG
@@ -93,12 +93,18 @@ app.post('/api/auth', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    // 4. Fetch user's existing votes
+    const ideaVotes = stmts.getAllUserIdeaVotes.all(address.toLowerCase());
+    const proposalVotes = stmts.getAllUserProposalVotes.all(address.toLowerCase());
+
     res.json({
       token,
       address: address.toLowerCase(),
       nftIds,
       credits,
-      isAdmin
+      isAdmin,
+      ideaVotes,
+      proposalVotes
     });
 
   } catch (e) {
@@ -127,7 +133,10 @@ app.get('/api/auth/refresh', authMiddleware, async (req, res) => {
 
     const isAdmin = address.toLowerCase() === adminAddress.toLowerCase();
 
-    res.json({ address, nftIds, credits, isAdmin });
+    const ideaVotes = stmts.getAllUserIdeaVotes.all(address.toLowerCase());
+    const proposalVotes = stmts.getAllUserProposalVotes.all(address.toLowerCase());
+
+    res.json({ address, nftIds, credits, isAdmin, ideaVotes, proposalVotes });
   } catch (e) {
     console.error('Refresh error:', e);
     res.status(500).json({ error: 'Erro ao atualizar dados' });
@@ -223,6 +232,38 @@ app.post('/api/ideas/:id/vote', authMiddleware, (req, res) => {
   }
 });
 
+app.delete('/api/ideas/:id/vote', authMiddleware, (req, res) => {
+  const ideaId = parseInt(req.params.id);
+  const { nftId } = req.body; // or req.query
+
+  if (!req.user.nftIds.includes(parseInt(nftId))) {
+    return res.status(403).json({ error: 'Você não é dono deste NFT' });
+  }
+
+  const idea = stmts.getIdeaById.get(ideaId);
+  if (!idea) return res.status(404).json({ error: 'Ideia não encontrada' });
+  if (idea.is_promoted) return res.status(400).json({ error: 'Ideia já foi promovida' });
+
+  const existingVote = stmts.getIdeaVote.get(ideaId, nftId);
+  if (!existingVote || existingVote.voter.toLowerCase() !== req.user.address) {
+    return res.status(400).json({ error: 'Voto não encontrado para revogar' });
+  }
+
+  const revoke = db.transaction(() => {
+    refundCredits(nftId, existingVote.credits_spent);
+    stmts.removeIdeaQvVotes.run(existingVote.votes_allocated, ideaId);
+    stmts.deleteIdeaVote.run(ideaId, nftId);
+  });
+
+  try {
+    revoke();
+    res.json({ message: 'Voto revogado e créditos reembolsados!', refunded: existingVote.credits_spent, remainingCredits: getRemainingCredits(nftId) });
+  } catch (e) {
+    console.error('Revoke error:', e);
+    res.status(400).json({ error: e.message });
+  }
+});
+
 app.post('/api/ideas/:id/comment', authMiddleware, (req, res) => {
   const ideaId = parseInt(req.params.id);
   const { text } = req.body;
@@ -302,6 +343,46 @@ app.post('/api/proposals/:id/vote', authMiddleware, (req, res) => {
     res.json({ message: 'Voto registrado!', marginalCost, remainingCredits: getRemainingCredits(nftId) });
   } catch (e) {
     console.error('Proposal vote error:', e);
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.delete('/api/proposals/:id/vote', authMiddleware, (req, res) => {
+  const proposalId = parseInt(req.params.id);
+  const { nftId } = req.body;
+
+  if (!req.user.nftIds.includes(parseInt(nftId))) {
+    return res.status(403).json({ error: 'Você não é dono deste NFT' });
+  }
+
+  const proposal = stmts.getProposalById.get(proposalId);
+  if (!proposal) return res.status(404).json({ error: 'Proposta não encontrada' });
+
+  const now = Math.floor(Date.now() / 1000);
+  if (now > proposal.end_time) {
+    return res.status(400).json({ error: 'Votação já foi encerrada' });
+  }
+
+  const existingVote = stmts.getProposalVote.get(proposalId, nftId);
+  if (!existingVote || existingVote.voter.toLowerCase() !== req.user.address) {
+    return res.status(400).json({ error: 'Voto não encontrado para revogar' });
+  }
+
+  const revoke = db.transaction(() => {
+    refundCredits(nftId, existingVote.credits_spent);
+    
+    if (existingVote.choice === 1) stmts.removeProposalVotesFor.run(existingVote.votes_allocated, proposalId);
+    else if (existingVote.choice === 2) stmts.removeProposalVotesAgainst.run(existingVote.votes_allocated, proposalId);
+    else stmts.removeProposalVotesAbstain.run(existingVote.votes_allocated, proposalId);
+    
+    stmts.deleteProposalVote.run(proposalId, nftId);
+  });
+
+  try {
+    revoke();
+    res.json({ message: 'Voto revogado e créditos reembolsados!', refunded: existingVote.credits_spent, remainingCredits: getRemainingCredits(nftId) });
+  } catch (e) {
+    console.error('Proposal revoke error:', e);
     res.status(400).json({ error: e.message });
   }
 });

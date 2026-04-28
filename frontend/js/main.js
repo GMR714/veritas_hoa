@@ -44,7 +44,9 @@ const i18n = {
     err_fill_title: "Fill in the title",
     msg_prop_ok: "Proposal created! 🗳️",
     msg_acct_change: "Account changed — reconnecting.",
-    promoting: "Promoting..."
+    promoting: "Promoting...",
+    btn_revoke: "↺ Revoke & Refund",
+    msg_revoke_ok: "Vote revoked. Credits refunded:"
   },
   es: {
     // Dynamic JS Text
@@ -84,7 +86,9 @@ const i18n = {
     err_fill_title: "Completa el título",
     msg_prop_ok: "¡Propuesta creada! 🗳️",
     msg_acct_change: "Cuenta cambiada — reconectando.",
-    promoting: "Promoviendo..."
+    promoting: "Promoviendo...",
+    btn_revoke: "↺ Revocar y Reembolsar",
+    msg_revoke_ok: "Voto revocado. Créditos devueltos:"
   }
 };
 
@@ -157,7 +161,9 @@ const state = {
   ideas: [],
   proposals: [],
   isAdmin: false,
-  nextBatchTime: 0
+  nextBatchTime: 0,
+  myIdeaVotes: [],
+  myPropVotes: []
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -240,10 +246,27 @@ function renderIdeaList() {
           <p style="margin-top:4px;">${idea.description}</p>
         </div>
       </div>
-      <div class="idea-actions">
+      <div class="idea-actions">`;
+
+    // Check if user has voted on this idea
+    const userVote = state.myIdeaVotes.find(v => v.idea_id === idea.id);
+
+    if (userVote) {
+      html += `
+        <div style="flex:1; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.8rem; color:var(--olive-l);">✓ Voted with NFT #${userVote.nft_id} (${userVote.votes_allocated} votes)</span>
+        </div>
+        <button class="btn-sm btn-against" onclick="window.app.revokeIdeaVote(${idea.id}, ${userVote.nft_id})">${t('btn_revoke')}</button>
+      `;
+    } else {
+      html += `
         <select id="vote-idea-nft-${idea.id}">${nftOpts}</select>
         <input type="number" id="qv-idea-${idea.id}" value="1" min="1" max="100">
         <button class="btn-sm btn-vote" onclick="window.app.voteIdea(${idea.id})">${t('btn_vote')}</button>
+      `;
+    }
+
+    html += `
       </div>
       <div class="comments-area">
         <div class="comment-list">${comments}</div>
@@ -292,13 +315,31 @@ function renderProposalList() {
           <span class="t-for">${t('tally_for')}: ${p.votes_for}</span>
           <span class="t-ag">${t('tally_against')}: ${p.votes_against}</span>
         </div>
-        <div class="proposal-actions">
+        <div class="proposal-actions">`;
+
+      const userVote = state.myPropVotes.find(v => v.proposal_id === p.id);
+
+      if (userVote) {
+        const choiceStr = userVote.choice === 1 ? t('tally_for') : (userVote.choice === 2 ? t('tally_against') : 'Abstain');
+        html += `
+          <div style="flex:1; display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.8rem; color:var(--olive-l);">✓ Voted ${choiceStr} (NFT #${userVote.nft_id})</span>
+          </div>
+          <button class="btn-sm btn-against" onclick="window.app.revokePropVote(${p.id}, ${userVote.nft_id})">${t('btn_revoke')}</button>
+        `;
+      } else {
+        html += `
           <select id="vote-prop-nft-${p.id}">${nftOpts}</select>
           <input type="number" id="qv-prop-${p.id}" value="1" min="1" max="100">
           <button class="btn-sm btn-for" onclick="window.app.voteProposal(${p.id},1)">${t('btn_for')}</button>
           <button class="btn-sm btn-against" onclick="window.app.voteProposal(${p.id},2)">${t('btn_against')}</button>
+        `;
+      }
+
+      html += `
         </div>
       </div>`;
+      return html;
     }).join('');
   }
 
@@ -392,6 +433,8 @@ async function connectWallet() {
     userAddress = authData.address;
     state.isAdmin = authData.isAdmin;
     state.myNFTs = authData.nftIds.map(id => ({ id, credits: authData.credits[id] }));
+    state.myIdeaVotes = authData.ideaVotes || [];
+    state.myPropVotes = authData.proposalVotes || [];
 
     document.getElementById('welcome-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
@@ -442,6 +485,8 @@ async function syncData() {
       const userData = await api('/auth/refresh');
       state.myNFTs = userData.nftIds.map(id => ({ id, credits: userData.credits[id] }));
       state.isAdmin = userData.isAdmin;
+      state.myIdeaVotes = userData.ideaVotes || [];
+      state.myPropVotes = userData.proposalVotes || [];
       document.getElementById('admin-panel').style.display = state.isAdmin ? 'block' : 'none';
     }
     const ideasData = await api('/ideas');
@@ -483,6 +528,18 @@ window.app = {
     } catch (e) { notify(e.message, 'error'); }
   },
 
+  revokeIdeaVote: async (ideaId, nftId) => {
+    if (!authToken) return;
+    try {
+      const result = await api(`/ideas/${ideaId}/vote`, {
+        method: 'DELETE',
+        body: JSON.stringify({ nftId })
+      });
+      notify(`${t('msg_revoke_ok')} ${result.refunded} cr`, 'success');
+      await syncData();
+    } catch (e) { notify(e.message, 'error'); }
+  },
+
   addComment: async (ideaId) => {
     if (!authToken) return notify(t('err_connect'), 'warning');
     const input = document.getElementById(`comment-input-${ideaId}`);
@@ -511,6 +568,18 @@ window.app = {
         body: JSON.stringify({ nftId, choice, additionalVotes })
       });
       notify(`${t('msg_vote_ok')} ${result.marginalCost} cr`, 'success');
+      await syncData();
+    } catch (e) { notify(e.message, 'error'); }
+  },
+
+  revokePropVote: async (propId, nftId) => {
+    if (!authToken) return;
+    try {
+      const result = await api(`/proposals/${propId}/vote`, {
+        method: 'DELETE',
+        body: JSON.stringify({ nftId })
+      });
+      notify(`${t('msg_revoke_ok')} ${result.refunded} cr`, 'success');
       await syncData();
     } catch (e) { notify(e.message, 'error'); }
   },

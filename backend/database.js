@@ -96,6 +96,9 @@ const stmts = {
     ON CONFLICT(idea_id, nft_id) DO UPDATE SET votes_allocated = ?, credits_spent = ?
   `),
   addIdeaQvVotes: db.prepare(`UPDATE ideas SET qv_votes = qv_votes + ? WHERE id = ?`),
+  removeIdeaQvVotes: db.prepare(`UPDATE ideas SET qv_votes = MAX(0, qv_votes - ?) WHERE id = ?`),
+  deleteIdeaVote: db.prepare(`DELETE FROM idea_votes WHERE idea_id = ? AND nft_id = ?`),
+  getAllUserIdeaVotes: db.prepare(`SELECT idea_id, nft_id, votes_allocated FROM idea_votes WHERE voter = ?`),
 
   // Proposals
   insertProposal: db.prepare(`INSERT INTO proposals (title, description, votes_for, votes_against, votes_abstain, start_time, end_time, from_idea_id) VALUES (?, ?, ?, ?, 0, ?, ?, ?)`),
@@ -112,6 +115,11 @@ const stmts = {
     VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(proposal_id, nft_id) DO UPDATE SET votes_allocated = ?, credits_spent = ?
   `),
+  removeProposalVotesFor: db.prepare(`UPDATE proposals SET votes_for = MAX(0, votes_for - ?) WHERE id = ?`),
+  removeProposalVotesAgainst: db.prepare(`UPDATE proposals SET votes_against = MAX(0, votes_against - ?) WHERE id = ?`),
+  removeProposalVotesAbstain: db.prepare(`UPDATE proposals SET votes_abstain = MAX(0, votes_abstain - ?) WHERE id = ?`),
+  deleteProposalVote: db.prepare(`DELETE FROM proposal_votes WHERE proposal_id = ? AND nft_id = ?`),
+  getAllUserProposalVotes: db.prepare(`SELECT proposal_id, nft_id, choice, votes_allocated FROM proposal_votes WHERE voter = ?`),
 
   // Comments
   insertComment: db.prepare(`INSERT INTO comments (idea_id, author, text, timestamp) VALUES (?, ?, ?, ?)`),
@@ -149,4 +157,13 @@ function spendCredits(nftId, amount) {
   stmts.upsertCredits.run(nftId, year, newTotal, newTotal);
 }
 
-module.exports = { db, stmts, CREDITS_PER_YEAR, getCurrentYear, getRemainingCredits, spendCredits };
+function refundCredits(nftId, amount) {
+  const year = getCurrentYear();
+  const row = stmts.getCreditsSpent.get(nftId, year);
+  if (row) {
+    const newTotal = Math.max(0, row.total_spent - amount);
+    stmts.upsertCredits.run(nftId, year, newTotal, newTotal);
+  }
+}
+
+module.exports = { db, stmts, CREDITS_PER_YEAR, getCurrentYear, getRemainingCredits, spendCredits, refundCredits };
