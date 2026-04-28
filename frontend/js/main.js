@@ -66,7 +66,7 @@ function renderMyNFTs() {
 function renderIdeaList() {
   const c = document.getElementById('idea-list');
   if (state.ideas.length === 0) {
-    c.innerHTML = '<p class="muted center">Nenhuma ideia no cesto ainda. Seja o primeiro!</p>';
+    c.innerHTML = '<p class="empty-state">Nenhuma ideia no cesto ainda. Seja o primeiro! 🌱</p>';
     return;
   }
 
@@ -81,9 +81,9 @@ function renderIdeaList() {
 
     return `
     <div class="idea-card">
-      <div class="idea-card-top">
-        <div class="idea-votes-badge">${idea.qv_votes}<span>votos</span></div>
-        <div class="idea-content">
+      <div class="idea-top">
+        <div class="vote-badge">${idea.qv_votes}<small>votos</small></div>
+        <div class="idea-body">
           <h4>${idea.title}</h4>
           <p>${idea.description}</p>
         </div>
@@ -91,13 +91,13 @@ function renderIdeaList() {
       <div class="idea-actions">
         <select id="vote-idea-nft-${idea.id}">${nftOpts}</select>
         <input type="number" id="qv-idea-${idea.id}" value="1" min="1" max="100">
-        <button class="btn btn-small btn-vote-idea" onclick="window.app.voteIdea(${idea.id})">👍 Votar</button>
+        <button class="btn-sm btn-vote" onclick="window.app.voteIdea(${idea.id})">👍 Votar</button>
       </div>
       <div class="comments-area">
         <div class="comment-list">${comments}</div>
         <div class="comment-form">
           <input type="text" id="comment-input-${idea.id}" placeholder="Comente...">
-          <button class="btn btn-small btn-comment" onclick="window.app.addComment(${idea.id})">💬</button>
+          <button class="btn-sm btn-ghost" onclick="window.app.addComment(${idea.id})">💬</button>
         </div>
       </div>
     </div>`;
@@ -118,44 +118,42 @@ function renderProposalList() {
 
   // Active proposals
   if (active.length === 0) {
-    votingContainer.innerHTML = '<p class="muted center">Nenhuma proposta ativa no momento.</p>';
+    votingContainer.innerHTML = '<p class="empty-state">Nenhuma proposta ativa no momento.</p>';
   } else {
     votingContainer.innerHTML = active.map(p => {
-      const secs = p.end_time - now;
-      const mins = Math.floor(secs / 60);
+      const mins = Math.floor((p.end_time - now) / 60);
       const total = p.votes_for + p.votes_against + p.votes_abstain || 1;
       const forPct = Math.round((p.votes_for / total) * 100);
       const againstPct = Math.round((p.votes_against / total) * 100);
 
       return `
       <div class="proposal-card">
-        <div class="proposal-header">
+        <div class="prop-header">
           <h4>${p.title}</h4>
-          <span class="timer-badge">⏱ ${mins}min</span>
+          <span class="timer-pill">⏱ ${mins}min</span>
         </div>
-        <p class="proposal-desc">${p.description}</p>
+        <p class="prop-desc">${p.description}</p>
         <div class="vote-bar">
-          <div class="vote-bar-for" style="width:${forPct}%"></div>
-          <div class="vote-bar-against" style="width:${againstPct}%"></div>
+          <div class="vb-for" style="width:${forPct}%"></div>
+          <div class="vb-ag" style="width:${againstPct}%"></div>
         </div>
         <div class="vote-tally">
-          <span class="tally-for">✅ ${p.votes_for} Favor</span>
-          <span class="tally-against">❌ ${p.votes_against} Contra</span>
-          <span class="tally-abstain">➖ ${p.votes_abstain}</span>
+          <span class="t-for">✅ ${p.votes_for} Favor</span>
+          <span class="t-ag">❌ ${p.votes_against} Contra</span>
+          <span class="t-ab">➖ ${p.votes_abstain}</span>
         </div>
         <div class="proposal-actions">
           <select id="vote-prop-nft-${p.id}">${nftOpts}</select>
           <input type="number" id="qv-prop-${p.id}" value="1" min="1" max="100">
-          <button class="btn btn-small btn-vote-for" onclick="window.app.voteProposal(${p.id},1)">Favor</button>
-          <button class="btn btn-small btn-vote-against" onclick="window.app.voteProposal(${p.id},2)">Contra</button>
+          <button class="btn-sm btn-for" onclick="window.app.voteProposal(${p.id},1)">✅ Favor</button>
+          <button class="btn-sm btn-against" onclick="window.app.voteProposal(${p.id},2)">❌ Contra</button>
         </div>
       </div>`;
     }).join('');
   }
 
-  // Ended proposals
   if (ended.length === 0) {
-    resultsContainer.innerHTML = '<p class="muted center">Nenhuma proposta encerrada.</p>';
+    resultsContainer.innerHTML = '<p class="empty-state">Nenhuma proposta encerrada.</p>';
   } else {
     resultsContainer.innerHTML = ended.map(p => {
       const isApproved = p.votes_for > p.votes_against;
@@ -165,19 +163,19 @@ function renderProposalList() {
 
       return `
       <div class="proposal-card">
-        <div class="proposal-header">
+        <div class="prop-header">
           <h4>${p.title}</h4>
-          <span class="result-badge ${isApproved ? 'result-approved' : 'result-rejected'}">${isApproved ? '✅ APROVADA' : '❌ REJEITADA'}</span>
+          <span class="result-pill ${isApproved ? 'result-yes' : 'result-no'}">${isApproved ? '✅ APROVADA' : '❌ REJEITADA'}</span>
         </div>
-        <p class="proposal-desc">${p.description}</p>
+        <p class="prop-desc">${p.description}</p>
         <div class="vote-bar">
-          <div class="vote-bar-for" style="width:${forPct}%"></div>
-          <div class="vote-bar-against" style="width:${againstPct}%"></div>
+          <div class="vb-for" style="width:${forPct}%"></div>
+          <div class="vb-ag" style="width:${againstPct}%"></div>
         </div>
         <div class="vote-tally">
-          <span class="tally-for">✅ ${p.votes_for} Favor</span>
-          <span class="tally-against">❌ ${p.votes_against} Contra</span>
-          <span class="tally-abstain">➖ ${p.votes_abstain}</span>
+          <span class="t-for">✅ ${p.votes_for} Favor</span>
+          <span class="t-ag">❌ ${p.votes_against} Contra</span>
+          <span class="t-ab">➖ ${p.votes_abstain}</span>
         </div>
       </div>`;
     }).join('');

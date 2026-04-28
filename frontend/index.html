@@ -4,171 +4,194 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Veritas Villages — Governança Comunitária</title>
-  <meta name="description" content="Plataforma de Governança da Veritas Villages — vote em ideias e propostas para a comunidade usando Quadratic Voting.">
+  <meta name="description" content="Plataforma de governança da Veritas Villages. Vote em ideias e propostas usando Quadratic Voting.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <!-- Animated background -->
+  <div class="bg-gradient"></div>
+  <div class="bg-pattern"></div>
+
+  <!-- ═══════════════ HEADER ═══════════════ -->
   <header id="app-header">
     <div class="header-inner">
       <div class="header-brand">
-        <img src="assets/logo.png" alt="Veritas Villages" class="header-logo" id="header-logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="15" fill="url(#logoGrad)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+            <path d="M16 8C12 8 9 11 9 15C9 19 12 24 16 24C20 24 23 19 23 15C23 11 20 8 16 8ZM16 10C14 12 13 14 13 16C13 18 14 20 16 22C18 20 19 18 19 16C19 14 18 12 16 10Z" fill="white" opacity="0.9"/>
+            <circle cx="13" cy="11" r="1.5" fill="#A8D06A"/>
+            <circle cx="11" cy="13" r="1" fill="#7D9B3A"/>
+            <circle cx="14" cy="9" r="1" fill="#96B64E"/>
+            <defs><linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#1B6B7D"/><stop offset="1" stop-color="#2D5A3D"/></linearGradient></defs>
+          </svg>
+        </div>
         <div class="header-titles">
           <h1>Veritas Villages</h1>
-          <span class="header-subtitle">Governança Comunitária</span>
+          <span class="header-tag">Governança</span>
         </div>
       </div>
       <div class="header-actions">
-        <button id="btn-connect-wallet" class="btn btn-connect">
-          <span class="btn-icon">🔗</span> Conectar
+        <button id="btn-connect-wallet" class="btn-glow">
+          <span>🔗</span> Conectar
         </button>
-        <button id="btn-disconnect-wallet" class="btn btn-connected" style="display:none;">
-          <span class="wallet-dot"></span>
+        <button id="btn-disconnect-wallet" class="btn-wallet-connected" style="display:none;">
+          <span class="pulse-dot"></span>
           <span id="wallet-label">0x...</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <!-- ═══════════════ WELCOME ═══════════════ -->
   <main id="app-main">
-
-    <!-- Welcome Screen (shown when not connected) -->
-    <section id="welcome-screen" class="welcome">
-      <div class="welcome-card">
-        <div class="welcome-icon">🏡</div>
-        <h2>Bem-vindo à Governança</h2>
-        <p>Conecte sua carteira MetaMask para participar das decisões da comunidade Veritas Villages.</p>
-        <button class="btn btn-primary btn-large" onclick="document.getElementById('btn-connect-wallet').click()">
-          <span class="btn-icon">🔗</span> Conectar Carteira
-        </button>
+    <section id="welcome-screen" class="welcome-section">
+      <div class="welcome-glass">
+        <div class="welcome-hero">
+          <div class="hero-glow"></div>
+          <div class="hero-icon">🌿</div>
+          <h2>Governança<br><span>Comunitária</span></h2>
+          <p>Conecte sua carteira para participar das decisões que moldam nossa comunidade.</p>
+          <button class="btn-hero" onclick="document.getElementById('btn-connect-wallet').click()">
+            <span class="btn-hero-icon">🔗</span>
+            Conectar MetaMask
+          </button>
+        </div>
         <div class="welcome-features">
-          <div class="feature"><span>💡</span><span>Sugira ideias</span></div>
-          <div class="feature"><span>🗳️</span><span>Vote em propostas</span></div>
-          <div class="feature"><span>💬</span><span>Comente e debata</span></div>
-          <div class="feature"><span>⚡</span><span>Sem custo de gas</span></div>
+          <div class="feat-card">
+            <div class="feat-icon">💡</div>
+            <div class="feat-text"><strong>Sugira</strong><span>Proponha ideias</span></div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon">🗳️</div>
+            <div class="feat-text"><strong>Vote</strong><span>Quadratic Voting</span></div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon">💬</div>
+            <div class="feat-text"><strong>Debata</strong><span>Sem custo de gas</span></div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon">📊</div>
+            <div class="feat-text"><strong>Resultados</strong><span>Transparente</span></div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Dashboard (shown when connected) -->
+    <!-- ═══════════════ DASHBOARD ═══════════════ -->
     <section id="dashboard" style="display:none;">
 
-      <!-- Admin Panel (conditional) -->
-      <div id="admin-panel" class="admin-panel" style="display:none;">
-        <div class="admin-header">
-          <span class="admin-badge">⚙️ Painel Admin</span>
+      <!-- Admin Panel -->
+      <div id="admin-panel" class="admin-panel glass-card" style="display:none;">
+        <div class="admin-header-bar">
+          <span class="admin-badge">⚙️ Painel Administrativo</span>
         </div>
         <div class="admin-grid">
-          <div class="admin-card">
-            <h4>Emitir NFT</h4>
-            <div class="input-group">
-              <input type="text" id="admin-mint-address" placeholder="0x... endereço do morador">
-              <button id="btn-admin-mint" class="btn btn-accent">Emitir</button>
+          <div class="admin-block">
+            <label>Emitir NFT de Membro</label>
+            <div class="inline-form">
+              <input type="text" id="admin-mint-address" placeholder="0x... endereço">
+              <button id="btn-admin-mint" class="btn-accent">Emitir</button>
             </div>
           </div>
-          <div class="admin-card">
-            <h4>Criar Proposta</h4>
+          <div class="admin-block">
+            <label>Criar Proposta Direta</label>
             <input type="text" id="admin-prop-title" placeholder="Título da proposta">
-            <input type="text" id="admin-prop-desc" placeholder="Descrição (opcional)">
-            <div class="input-group">
-              <input type="number" id="admin-prop-duration" value="2" min="1" max="60" style="width:80px;">
-              <span class="input-suffix">min</span>
-              <button id="btn-admin-create-prop" class="btn btn-accent">Criar</button>
+            <input type="text" id="admin-prop-desc" placeholder="Descrição">
+            <div class="inline-form">
+              <input type="number" id="admin-prop-duration" value="2" min="1" max="60" class="input-mini">
+              <span class="label-suffix">minutos</span>
+              <button id="btn-admin-create-prop" class="btn-accent">Criar</button>
             </div>
           </div>
-          <div class="admin-card admin-card-ideas">
-            <h4>Promover Ideias</h4>
-            <div id="admin-idea-list" class="admin-idea-list">
-              <p class="muted">Nenhuma ideia.</p>
+          <div class="admin-block full-width">
+            <label>Promover Ideias → Proposta</label>
+            <div id="admin-idea-list" class="admin-ideas-scroll">
+              <p class="empty-state">Nenhuma ideia no cesto</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- My NFTs Strip -->
-      <div id="my-nfts-section" class="nfts-strip" style="display:none;">
-        <div class="nfts-strip-header">
-          <span>🪪 Meus NFTs</span>
-          <span id="user-address" class="wallet-addr"></span>
+      <!-- NFT Strip -->
+      <div id="my-nfts-section" class="nft-strip glass-card" style="display:none;">
+        <div class="nft-strip-head">
+          <span class="strip-label">🪪 Meus NFTs</span>
+          <code id="user-address" class="addr-badge"></code>
         </div>
-        <div id="my-nfts-list" class="nfts-carousel">
-          <p class="muted">Nenhum NFT encontrado.</p>
-        </div>
+        <div id="my-nfts-list" class="nft-scroll"></div>
       </div>
 
-      <!-- Tabs Navigation -->
-      <nav class="tabs-nav">
+      <!-- Tab Navigation -->
+      <nav class="tab-bar glass-card">
         <button class="tab active" data-tab="idea">
-          <span class="tab-icon">💡</span>
-          <span class="tab-label">Ideias</span>
+          <span class="tab-emoji">💡</span><span class="tab-text">Ideias</span>
         </button>
         <button class="tab" data-tab="voting">
-          <span class="tab-icon">🗳️</span>
-          <span class="tab-label">Votação</span>
+          <span class="tab-emoji">🗳️</span><span class="tab-text">Votação</span>
         </button>
         <button class="tab" data-tab="results">
-          <span class="tab-icon">📊</span>
-          <span class="tab-label">Resultados</span>
+          <span class="tab-emoji">📊</span><span class="tab-text">Resultados</span>
         </button>
       </nav>
 
-      <!-- Tab: Ideias -->
-      <div id="tab-idea" class="tab-content active">
-        <div class="tab-header">
-          <h2>💡 Cesto de Ideias</h2>
-          <p class="tab-desc">Sugira e vote nas ideias da comunidade</p>
+      <!-- TAB: Ideas -->
+      <div id="tab-idea" class="tab-panel active">
+        <div class="panel-head">
+          <h2>Cesto de Ideias</h2>
+          <p>Sugira e vote nas ideias da comunidade</p>
         </div>
 
-        <div class="idea-form card">
-          <h3>Nova Ideia</h3>
-          <input type="text" id="idea-title" placeholder="Título da ideia..." class="input-full">
-          <textarea id="idea-desc" placeholder="Descreva sua sugestão..." class="input-full" rows="3"></textarea>
-          <div class="form-footer">
-            <select id="idea-nft-select" class="select-nft">
-              <option value="">Selecione NFT</option>
+        <div class="idea-form glass-card">
+          <h3>✨ Nova Ideia</h3>
+          <input type="text" id="idea-title" placeholder="Título da sua ideia..." class="input-lg">
+          <textarea id="idea-desc" placeholder="Descreva sua sugestão para a comunidade..." rows="3"></textarea>
+          <div class="form-row">
+            <select id="idea-nft-select" class="select-styled">
+              <option value="">Selecione seu NFT</option>
             </select>
-            <button id="btn-submit-idea" class="btn btn-primary">
-              <span class="btn-icon">🚀</span> Enviar Ideia
+            <button id="btn-submit-idea" class="btn-primary">
+              🚀 Enviar Ideia
             </button>
           </div>
         </div>
 
-        <div id="idea-list" class="ideas-grid">
-          <p class="muted center">Conecte a carteira para ver ideias.</p>
+        <div id="idea-list" class="content-list">
+          <p class="empty-state">Conecte a carteira para ver as ideias.</p>
         </div>
       </div>
 
-      <!-- Tab: Votação de Propostas -->
-      <div id="tab-voting" class="tab-content">
-        <div class="tab-header">
-          <h2>🗳️ Votação Ativa</h2>
-          <p class="tab-desc">Vote nas propostas oficiais da comunidade</p>
+      <!-- TAB: Voting -->
+      <div id="tab-voting" class="tab-panel">
+        <div class="panel-head">
+          <h2>Votação Ativa</h2>
+          <p>Vote nas propostas oficiais da comunidade</p>
         </div>
-        <div id="proposal-list" class="proposals-grid">
-          <p class="muted center">Nenhuma proposta ativa.</p>
+        <div id="proposal-list" class="content-list">
+          <p class="empty-state">Nenhuma proposta ativa.</p>
         </div>
       </div>
 
-      <!-- Tab: Resultados -->
-      <div id="tab-results" class="tab-content">
-        <div class="tab-header">
-          <h2>📊 Resultados</h2>
-          <p class="tab-desc">Histórico de propostas encerradas</p>
+      <!-- TAB: Results -->
+      <div id="tab-results" class="tab-panel">
+        <div class="panel-head">
+          <h2>Resultados</h2>
+          <p>Histórico de propostas encerradas</p>
         </div>
-        <div id="results-list" class="proposals-grid">
-          <p class="muted center">Nenhuma proposta encerrada.</p>
+        <div id="results-list" class="content-list">
+          <p class="empty-state">Nenhuma proposta encerrada.</p>
         </div>
       </div>
+
     </section>
   </main>
 
-  <!-- Toast Notifications -->
-  <div id="notifications" class="notifications"></div>
+  <!-- Toasts -->
+  <div id="notifications" class="toast-stack"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js"></script>
   <script type="module" src="js/main.js"></script>
