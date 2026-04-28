@@ -31,6 +31,15 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+// Serve static files from the frontend directory
+const path = require('path');
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
+
+// Handle SPA routing - send index.html for unknown routes (optional but good)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
+});
+
 // ═══════════════════════════════════════════════════════════════
 //  MIDDLEWARE: JWT Auth
 // ═══════════════════════════════════════════════════════════════

@@ -1,4 +1,6 @@
-export const API_URL = "http://localhost:3001/api";
+export const API_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+  ? "http://localhost:3001/api"
+  : "/api";
 
 export const CONTRACT_ADDRESSES = {
   NFT: "0xa1851Eb7B8aC7a684ef22EC3b3766A7583d62A80",
