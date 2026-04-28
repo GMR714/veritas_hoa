@@ -45,7 +45,8 @@ const i18n = {
     msg_prop_ok: "Proposal created! 🗳️",
     msg_acct_change: "Account changed — reconnecting.",
     msg_auto_promote: "Auto-promoting",
-    msg_promoted_ok: "Idea promoted! 🚀"
+    msg_promoted_ok: "Idea promoted! 🚀",
+    promoting: "Promoting..."
   },
   es: {
     // Dynamic JS Text
@@ -86,7 +87,8 @@ const i18n = {
     msg_prop_ok: "¡Propuesta creada! 🗳️",
     msg_acct_change: "Cuenta cambiada — reconectando.",
     msg_auto_promote: "Autopromoviendo",
-    msg_promoted_ok: "¡Idea promovida! 🚀"
+    msg_promoted_ok: "¡Idea promovida! 🚀",
+    promoting: "Promoviendo..."
   }
 };
 
@@ -220,6 +222,7 @@ function renderIdeaList() {
     : `<option value="">${t('no_nft')}</option>`;
 
   c.innerHTML = state.ideas.map(idea => {
+    const promoteAt = idea.timestamp + 120; // 2 minutes auto-promote
     const comments = (idea.comments || []).map(cm =>
       `<div class="comment-bubble"><strong>${cm.author.substring(0, 8)}...:</strong> ${cm.text}</div>`
     ).join('');
@@ -229,8 +232,11 @@ function renderIdeaList() {
       <div class="idea-top">
         <div class="vote-badge">${idea.qv_votes}<small>${t('votes')}</small></div>
         <div class="idea-body">
-          <h4>${idea.title}</h4>
-          <p>${idea.description}</p>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <h4 style="margin:0;">${idea.title}</h4>
+            <span class="timer-pill idea-timer" data-promote-at="${promoteAt}"></span>
+          </div>
+          <p style="margin-top:4px;">${idea.description}</p>
         </div>
       </div>
       <div class="idea-actions">
@@ -631,6 +637,22 @@ function init() {
   setInterval(async () => {
     if (authToken) await syncData();
   }, 15000);
+
+  // Live timer tick
+  setInterval(() => {
+    const now = Math.floor(Date.now() / 1000);
+    document.querySelectorAll('.idea-timer').forEach(el => {
+      const promoteAt = parseInt(el.getAttribute('data-promote-at'));
+      const left = promoteAt - now;
+      if (left > 0) {
+        const m = Math.floor(left / 60);
+        const s = left % 60;
+        el.textContent = `⏱ ${m}:${s.toString().padStart(2, '0')}`;
+      } else {
+        el.textContent = `🔄 ${t('promoting')}`;
+      }
+    });
+  }, 1000);
 }
 
 init();
