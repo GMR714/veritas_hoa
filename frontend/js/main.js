@@ -8,7 +8,7 @@ let userAddress = null;
 let authToken = null;
 
 const state = {
-  myNFTs: [],       // Array de { id, credits }
+  myNFTs: [],
   ideas: [],
   proposals: [],
   isAdmin: false,
@@ -32,10 +32,10 @@ async function api(endpoint, options = {}) {
 //  UI RENDERING
 // ═══════════════════════════════════════════════════════════════
 
-function notify(msg, type='info') {
+function notify(msg, type = 'info') {
   const c = document.getElementById('notifications');
   const t = document.createElement('div');
-  t.className = `toast toast-${type} show`;
+  t.className = `toast toast-${type}`;
   t.textContent = msg;
   c.appendChild(t);
   setTimeout(() => t.remove(), 4000);
@@ -44,58 +44,64 @@ function notify(msg, type='info') {
 function renderMyNFTs() {
   const list = document.getElementById('my-nfts-list');
   const select = document.getElementById('idea-nft-select');
-  
+
   if (state.myNFTs.length === 0) {
-    list.innerHTML = '<p class="muted" style="padding: 5px;">Você não possui nenhum NFT.</p>';
-    select.innerHTML = '<option value="">Nenhum NFT</option>';
+    list.innerHTML = '<p class="muted" style="padding:4px;">Nenhum NFT encontrado.</p>';
+    select.innerHTML = '<option value="">Sem NFT</option>';
     return;
   }
 
   list.innerHTML = state.myNFTs.map(nft => `
-    <div class="nft-card">
+    <div class="nft-chip">
       <h4>NFT #${nft.id}</h4>
-      <p>🪙 Créditos de Voto: <strong>${nft.credits}</strong></p>
+      <div class="credits">🪙 ${nft.credits} créditos</div>
     </div>
   `).join('');
 
-  select.innerHTML = state.myNFTs.map(nft => `<option value="${nft.id}">NFT #${nft.id} (${nft.credits} cr)</option>`).join('');
+  select.innerHTML = state.myNFTs.map(nft =>
+    `<option value="${nft.id}">NFT #${nft.id} (${nft.credits} cr)</option>`
+  ).join('');
 }
 
 function renderIdeaList() {
   const c = document.getElementById('idea-list');
-  if (state.ideas.length === 0) { c.innerHTML = '<p class="muted">Nenhuma ideia no cesto.</p>'; return; }
-  
-  const nftOptions = state.myNFTs.length > 0 
-    ? state.myNFTs.map(nft => `<option value="${nft.id}">NFT #${nft.id}</option>`).join('')
+  if (state.ideas.length === 0) {
+    c.innerHTML = '<p class="muted center">Nenhuma ideia no cesto ainda. Seja o primeiro!</p>';
+    return;
+  }
+
+  const nftOpts = state.myNFTs.length > 0
+    ? state.myNFTs.map(n => `<option value="${n.id}">NFT #${n.id}</option>`).join('')
     : '<option value="">Sem NFT</option>';
 
   c.innerHTML = state.ideas.map(idea => {
-    const commentsHtml = (idea.comments || []).map(c => 
-      `<div class="comment-item"><strong>${c.author.substring(0, 8)}...:</strong> ${c.text}</div>`
+    const comments = (idea.comments || []).map(cm =>
+      `<div class="comment-bubble"><strong>${cm.author.substring(0, 8)}...:</strong> ${cm.text}</div>`
     ).join('');
 
     return `
     <div class="idea-card">
-      <div class="idea-votes">${idea.qv_votes}<span>votos</span></div>
-      <div class="idea-body">
-        <h4>${idea.title}</h4>
-        <p>${idea.description}</p>
-        <div class="vote-controls">
-          <select id="vote-idea-nft-${idea.id}" style="width:110px; margin:0; padding:6px; font-size:0.8rem;">${nftOptions}</select>
-          <input type="number" id="qv-idea-${idea.id}" value="1" min="1" max="100">
-          <button class="btn btn-small btn-blue" onclick="window.app.voteIdea(${idea.id})">Votar (Custo x²)</button>
-        </div>
-        
-        <div class="comments-section">
-          ${commentsHtml}
-          <div class="comment-input-row">
-            <input type="text" id="comment-input-${idea.id}" placeholder="Adicione um comentário..." style="flex:1;">
-            <button class="btn btn-small btn-purple" onclick="window.app.addComment(${idea.id})">Comentar</button>
-          </div>
+      <div class="idea-card-top">
+        <div class="idea-votes-badge">${idea.qv_votes}<span>votos</span></div>
+        <div class="idea-content">
+          <h4>${idea.title}</h4>
+          <p>${idea.description}</p>
         </div>
       </div>
-    </div>
-  `}).join('');
+      <div class="idea-actions">
+        <select id="vote-idea-nft-${idea.id}">${nftOpts}</select>
+        <input type="number" id="qv-idea-${idea.id}" value="1" min="1" max="100">
+        <button class="btn btn-small btn-vote-idea" onclick="window.app.voteIdea(${idea.id})">👍 Votar</button>
+      </div>
+      <div class="comments-area">
+        <div class="comment-list">${comments}</div>
+        <div class="comment-form">
+          <input type="text" id="comment-input-${idea.id}" placeholder="Comente...">
+          <button class="btn btn-small btn-comment" onclick="window.app.addComment(${idea.id})">💬</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderProposalList() {
@@ -106,57 +112,72 @@ function renderProposalList() {
   const active = state.proposals.filter(p => now <= p.end_time);
   const ended = state.proposals.filter(p => now > p.end_time);
 
-  const nftOptions = state.myNFTs.length > 0 
-    ? state.myNFTs.map(nft => `<option value="${nft.id}">NFT #${nft.id}</option>`).join('')
+  const nftOpts = state.myNFTs.length > 0
+    ? state.myNFTs.map(n => `<option value="${n.id}">NFT #${n.id}</option>`).join('')
     : '<option value="">Sem NFT</option>';
 
-  // Active Proposals
+  // Active proposals
   if (active.length === 0) {
-    votingContainer.innerHTML = '<p class="muted">Nenhuma proposta ativa.</p>';
+    votingContainer.innerHTML = '<p class="muted center">Nenhuma proposta ativa no momento.</p>';
   } else {
     votingContainer.innerHTML = active.map(p => {
-      const minutes = Math.floor((p.end_time - now) / 60);
+      const secs = p.end_time - now;
+      const mins = Math.floor(secs / 60);
+      const total = p.votes_for + p.votes_against + p.votes_abstain || 1;
+      const forPct = Math.round((p.votes_for / total) * 100);
+      const againstPct = Math.round((p.votes_against / total) * 100);
+
       return `
       <div class="proposal-card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="proposal-header">
           <h4>${p.title}</h4>
-          <span class="text-gold" style="font-size:0.75rem; font-weight:bold;">Faltam ${minutes} min</span>
+          <span class="timer-badge">⏱ ${mins}min</span>
         </div>
-        <p>${p.description}</p>
-        
-        <div style="display:flex; gap: 15px; margin-bottom: 15px; font-size: 0.85rem;">
-          <span class="text-green">✅ Favor: <strong>${p.votes_for}</strong></span>
-          <span class="text-red">❌ Contra: <strong>${p.votes_against}</strong></span>
-          <span style="color:#aaa;">➖ Abstenção: <strong>${p.votes_abstain}</strong></span>
+        <p class="proposal-desc">${p.description}</p>
+        <div class="vote-bar">
+          <div class="vote-bar-for" style="width:${forPct}%"></div>
+          <div class="vote-bar-against" style="width:${againstPct}%"></div>
         </div>
-
-        <div class="vote-controls">
-          <select id="vote-prop-nft-${p.id}" style="width:110px; margin:0; padding:6px; font-size:0.8rem;">${nftOptions}</select>
+        <div class="vote-tally">
+          <span class="tally-for">✅ ${p.votes_for} Favor</span>
+          <span class="tally-against">❌ ${p.votes_against} Contra</span>
+          <span class="tally-abstain">➖ ${p.votes_abstain}</span>
+        </div>
+        <div class="proposal-actions">
+          <select id="vote-prop-nft-${p.id}">${nftOpts}</select>
           <input type="number" id="qv-prop-${p.id}" value="1" min="1" max="100">
-          <button class="btn btn-small btn-green" onclick="window.app.voteProposal(${p.id}, 1)">Favor</button>
-          <button class="btn btn-small btn-red" onclick="window.app.voteProposal(${p.id}, 2)">Contra</button>
+          <button class="btn btn-small btn-vote-for" onclick="window.app.voteProposal(${p.id},1)">Favor</button>
+          <button class="btn btn-small btn-vote-against" onclick="window.app.voteProposal(${p.id},2)">Contra</button>
         </div>
       </div>`;
     }).join('');
   }
 
-  // Ended Proposals (Results)
+  // Ended proposals
   if (ended.length === 0) {
-    resultsContainer.innerHTML = '<p class="muted">Nenhuma proposta encerrada.</p>';
+    resultsContainer.innerHTML = '<p class="muted center">Nenhuma proposta encerrada.</p>';
   } else {
     resultsContainer.innerHTML = ended.map(p => {
       const isApproved = p.votes_for > p.votes_against;
+      const total = p.votes_for + p.votes_against + p.votes_abstain || 1;
+      const forPct = Math.round((p.votes_for / total) * 100);
+      const againstPct = Math.round((p.votes_against / total) * 100);
+
       return `
       <div class="proposal-card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="proposal-header">
           <h4>${p.title}</h4>
-          <span style="font-size:0.75rem; font-weight:bold; color: ${isApproved ? '#22c55e' : '#ef4444'}">${isApproved ? 'APROVADA' : 'REJEITADA'}</span>
+          <span class="result-badge ${isApproved ? 'result-approved' : 'result-rejected'}">${isApproved ? '✅ APROVADA' : '❌ REJEITADA'}</span>
         </div>
-        <p>${p.description}</p>
-        <div style="display:flex; gap: 15px; margin-top: 10px; font-size: 0.85rem;">
-          <span class="text-green">✅ Favor: <strong>${p.votes_for}</strong></span>
-          <span class="text-red">❌ Contra: <strong>${p.votes_against}</strong></span>
-          <span style="color:#aaa;">➖ Abstenção: <strong>${p.votes_abstain}</strong></span>
+        <p class="proposal-desc">${p.description}</p>
+        <div class="vote-bar">
+          <div class="vote-bar-for" style="width:${forPct}%"></div>
+          <div class="vote-bar-against" style="width:${againstPct}%"></div>
+        </div>
+        <div class="vote-tally">
+          <span class="tally-for">✅ ${p.votes_for} Favor</span>
+          <span class="tally-against">❌ ${p.votes_against} Contra</span>
+          <span class="tally-abstain">➖ ${p.votes_abstain}</span>
         </div>
       </div>`;
     }).join('');
@@ -167,14 +188,14 @@ function renderAdminIdeaList() {
   const c = document.getElementById('admin-idea-list');
   if (!c) return;
   if (state.ideas.length === 0) { c.innerHTML = '<p class="muted">Nenhuma ideia.</p>'; return; }
-  
+
   c.innerHTML = state.ideas.map(idea => `
     <div class="admin-idea-row">
-      <div style="display:flex; flex-direction:column;">
+      <div>
         <strong>${idea.title}</strong>
-        <span style="font-size:0.7rem; color:var(--text-dim);">${idea.qv_votes} votos</span>
+        <div class="votes-label">${idea.qv_votes} votos</div>
       </div>
-      <button class="btn btn-small btn-purple" onclick="window.app.promoteIdea(${idea.id})">Promover</button>
+      <button class="btn btn-small btn-promote" onclick="window.app.promoteIdea(${idea.id})">Promover →</button>
     </div>
   `).join('');
 }
@@ -191,7 +212,6 @@ function switchTab(name) {
 async function connectWallet() {
   if (!window.ethereum) return notify('MetaMask não encontrado!', 'error');
   try {
-    // Force MetaMask popup
     await window.ethereum.request({
       method: 'wallet_requestPermissions',
       params: [{ eth_accounts: {} }]
@@ -200,43 +220,42 @@ async function connectWallet() {
     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
     const address = accounts[0];
 
-    // Sign a message (FREE - no gas)
-    const message = `Veritas Governance Login\nTimestamp: ${Date.now()}`;
+    const message = `Veritas Villages Login\nTimestamp: ${Date.now()}`;
     const providerEthers = new ethers.BrowserProvider(window.ethereum);
     const signer = await providerEthers.getSigner();
-    
+
     notify('Assine a mensagem na MetaMask (grátis)...', 'info');
     const signature = await signer.signMessage(message);
 
-    // Send to backend for verification
-    notify('Verificando NFTs...', 'info');
+    notify('Verificando seus NFTs...', 'info');
     const authData = await api('/auth', {
       method: 'POST',
       body: JSON.stringify({ address, signature, message })
     });
 
-    // Store session
     authToken = authData.token;
     userAddress = authData.address;
     state.isAdmin = authData.isAdmin;
     state.myNFTs = authData.nftIds.map(id => ({ id, credits: authData.credits[id] }));
 
-    // Update UI
+    // Update UI state
+    document.getElementById('welcome-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
     document.getElementById('btn-connect-wallet').style.display = 'none';
-    const btnDisconnect = document.getElementById('btn-disconnect-wallet');
-    btnDisconnect.style.display = 'block';
-    btnDisconnect.textContent = '🔌 ' + userAddress.substring(0,6) + '... (Sair)';
+    const btnDisc = document.getElementById('btn-disconnect-wallet');
+    btnDisc.style.display = 'inline-flex';
+    document.getElementById('wallet-label').textContent = userAddress.substring(0, 6) + '...' + userAddress.slice(-4);
     document.getElementById('user-address').textContent = userAddress;
     document.getElementById('my-nfts-section').style.display = 'block';
     document.getElementById('admin-panel').style.display = state.isAdmin ? 'block' : 'none';
 
     renderMyNFTs();
-    notify('Conectado com sucesso! Ações agora são gratuitas.', 'success');
+    notify('Conectado! Todas as ações são gratuitas.', 'success');
     await syncData();
 
   } catch (err) {
     console.error(err);
-    if (err.code !== 4001) notify('Erro ao conectar: ' + (err.message || ''), 'error');
+    if (err.code !== 4001) notify('Erro: ' + (err.message || ''), 'error');
   }
 }
 
@@ -248,9 +267,10 @@ function disconnectWallet() {
   state.ideas = [];
   state.proposals = [];
 
-  document.getElementById('btn-connect-wallet').style.display = 'block';
+  document.getElementById('welcome-screen').style.display = '';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('btn-connect-wallet').style.display = '';
   document.getElementById('btn-disconnect-wallet').style.display = 'none';
-  document.getElementById('user-address').textContent = 'Carteira não conectada.';
   document.getElementById('my-nfts-section').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'none';
 
@@ -261,12 +281,11 @@ function disconnectWallet() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  DATA SYNC (from backend, not blockchain)
+//  DATA SYNC
 // ═══════════════════════════════════════════════════════════════
 
 async function syncData() {
   try {
-    // Refresh NFT data
     if (authToken) {
       const userData = await api('/auth/refresh');
       state.myNFTs = userData.nftIds.map(id => ({ id, credits: userData.credits[id] }));
@@ -275,23 +294,19 @@ async function syncData() {
       renderMyNFTs();
     }
 
-    // Fetch ideas from backend
     state.ideas = await api('/ideas');
-
-    // Fetch proposals from backend
     state.proposals = await api('/proposals');
 
     renderIdeaList();
     renderProposalList();
     if (state.isAdmin) renderAdminIdeaList();
-
   } catch (err) {
     console.error('Sync error:', err);
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  ACTION HANDLERS (all via backend API - NO gas costs)
+//  ACTION HANDLERS
 // ═══════════════════════════════════════════════════════════════
 
 window.app = {
@@ -306,11 +321,9 @@ window.app = {
         method: 'POST',
         body: JSON.stringify({ nftId, additionalVotes })
       });
-      notify(`${result.message} (Custo: ${result.marginalCost} cr)`, 'success');
+      notify(`Voto registrado! Custo: ${result.marginalCost} cr`, 'success');
       await syncData();
-    } catch (e) {
-      notify(`Falha ao votar: ${e.message}`, 'error');
-    }
+    } catch (e) { notify(e.message, 'error'); }
   },
 
   addComment: async (ideaId) => {
@@ -326,9 +339,7 @@ window.app = {
       });
       input.value = '';
       await syncData();
-    } catch (e) {
-      notify(`Erro: ${e.message}`, 'error');
-    }
+    } catch (e) { notify(e.message, 'error'); }
   },
 
   voteProposal: async (propId, choice) => {
@@ -342,11 +353,9 @@ window.app = {
         method: 'POST',
         body: JSON.stringify({ nftId, choice, additionalVotes })
       });
-      notify(`${result.message} (Custo: ${result.marginalCost} cr)`, 'success');
+      notify(`Voto registrado! Custo: ${result.marginalCost} cr`, 'success');
       await syncData();
-    } catch (e) {
-      notify(`Falha ao votar: ${e.message}`, 'error');
-    }
+    } catch (e) { notify(e.message, 'error'); }
   },
 
   promoteIdea: async (ideaId) => {
@@ -359,28 +368,20 @@ window.app = {
       notify(result.message, 'success');
       await syncData();
       switchTab('voting');
-    } catch (e) {
-      notify(`Erro: ${e.message}`, 'error');
-    }
-  },
-
-  executeProposal: async (propId) => {
-    notify('Proposta encerrada (resultados visíveis na aba Resultados)', 'info');
-    await syncData();
+    } catch (e) { notify(e.message, 'error'); }
   }
 };
 
 // ═══════════════════════════════════════════════════════════════
-//  INITIALIZATION
+//  INIT
 // ═══════════════════════════════════════════════════════════════
 
 function init() {
   document.getElementById('btn-connect-wallet').onclick = connectWallet;
   document.getElementById('btn-disconnect-wallet').onclick = disconnectWallet;
-
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
 
-  // Submit Idea
+  // Submit idea
   document.getElementById('btn-submit-idea').onclick = async () => {
     if (!authToken) return notify('Conecte a carteira!', 'warning');
     const nftId = parseInt(document.getElementById('idea-nft-select').value);
@@ -395,16 +396,14 @@ function init() {
         method: 'POST',
         body: JSON.stringify({ nftId, title, description: desc })
       });
-      notify('Ideia enviada para o cesto!', 'success');
+      notify('Ideia enviada! 🎉', 'success');
       document.getElementById('idea-title').value = '';
       document.getElementById('idea-desc').value = '';
       await syncData();
-    } catch (e) {
-      notify(`Falha: ${e.message}`, 'error');
-    }
+    } catch (e) { notify(e.message, 'error'); }
   };
 
-  // Admin: Mint NFT (this stays on-chain since it's a blockchain operation)
+  // Admin: Mint NFT (on-chain)
   document.getElementById('btn-admin-mint').onclick = async () => {
     if (!state.isAdmin) return notify('Apenas admin!', 'error');
     const address = document.getElementById('admin-mint-address').value;
@@ -412,17 +411,17 @@ function init() {
 
     try {
       notify('Mintando NFT (on-chain)...', 'info');
-      const providerEthers = new ethers.BrowserProvider(window.ethereum);
-      const signer = await providerEthers.getSigner();
-      const nftContract = new ethers.Contract(CONTRACT_ADDRESSES.NFT, ABIS.NFT, signer);
-      const tx = await nftContract.safeMint(address, { gasLimit: 300000 });
+      const p = new ethers.BrowserProvider(window.ethereum);
+      const s = await p.getSigner();
+      const nft = new ethers.Contract(CONTRACT_ADDRESSES.NFT, ABIS.NFT, s);
+      const tx = await nft.safeMint(address, { gasLimit: 300000 });
       await tx.wait();
-      notify('NFT emitido com sucesso!', 'success');
+      notify('NFT emitido! ✅', 'success');
       document.getElementById('admin-mint-address').value = '';
       await syncData();
     } catch (e) {
       console.error(e);
-      notify(`Falha ao emitir NFT: ${e.reason || 'Erro'}`, 'error');
+      notify(`Falha: ${e.reason || 'Erro'}`, 'error');
     }
   };
 
@@ -439,21 +438,19 @@ function init() {
         method: 'POST',
         body: JSON.stringify({ title, description: desc, durationMinutes: dur })
       });
-      notify('Proposta Criada!', 'success');
+      notify('Proposta criada! 🗳️', 'success');
       document.getElementById('admin-prop-title').value = '';
       document.getElementById('admin-prop-desc').value = '';
       await syncData();
       switchTab('voting');
-    } catch (e) {
-      notify(`Erro: ${e.message}`, 'error');
-    }
+    } catch (e) { notify(e.message, 'error'); }
   };
 
-  // Listen for account changes in MetaMask
+  // MetaMask account change
   if (window.ethereum) {
-    window.ethereum.on('accountsChanged', async (accounts) => {
+    window.ethereum.on('accountsChanged', (accounts) => {
       if (accounts.length > 0 && userAddress && accounts[0].toLowerCase() !== userAddress.toLowerCase()) {
-        notify('Conta alterada — reconecte para atualizar.', 'info');
+        notify('Conta alterada — reconecte.', 'info');
         disconnectWallet();
       } else if (accounts.length === 0) {
         disconnectWallet();
@@ -461,10 +458,9 @@ function init() {
     });
   }
 
-  // Admin auto-promotion bot (every 10 seconds)
+  // Admin auto-promote bot
   setInterval(async () => {
     if (!state.isAdmin || !authToken) return;
-
     const now = Math.floor(Date.now() / 1000);
     for (const idea of state.ideas) {
       if ((now - idea.timestamp) >= 120) {
@@ -474,20 +470,17 @@ function init() {
             method: 'POST',
             body: JSON.stringify({ durationMinutes: 2 })
           });
-          notify('Ideia promovida automaticamente!', 'success');
+          notify('Ideia promovida! 🚀', 'success');
           await syncData();
-        } catch (e) {
-          console.error('Auto-promote error:', e);
-        }
+        } catch (e) { console.error('Auto-promote:', e); }
       }
     }
   }, 10000);
 
-  // Auto-refresh data every 15 seconds to keep UI updated
+  // Auto-refresh
   setInterval(async () => {
     if (authToken) await syncData();
   }, 15000);
 }
 
-// Start app
 init();
