@@ -1,3 +1,5 @@
+export const API_URL = "http://localhost:3001/api";
+
 export const CONTRACT_ADDRESSES = {
   NFT: "0xa1851Eb7B8aC7a684ef22EC3b3766A7583d62A80",
   GOVERNANCE: "0x0dD18e9cc000245C3442c181206de42762f6A537"
