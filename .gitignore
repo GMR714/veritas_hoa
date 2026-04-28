@@ -24,3 +24,8 @@ Thumbs.db
 !package.json
 !package-lock.json
 !hardhat.config.js
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
