@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Veritas Villages — Governança Comunitária</title>
-  <meta name="description" content="Plataforma de governança da Veritas Villages. Vote em ideias e propostas usando Quadratic Voting.">
+  <title>Veritas Villages — Community Governance</title>
+  <meta name="description" content="Veritas Villages Governance Platform. Vote on ideas and proposals using Quadratic Voting.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -32,12 +32,19 @@
         </div>
         <div class="header-titles">
           <h1>Veritas Villages</h1>
-          <span class="header-tag">Governança</span>
+          <span class="header-tag" data-i18n="nav_governance">Governance</span>
         </div>
       </div>
       <div class="header-actions">
+        <!-- Language Switcher -->
+        <div class="lang-switch">
+          <button id="btn-lang-en" class="lang-btn active" onclick="window.app.setLanguage('en')">EN</button>
+          <span class="lang-sep">|</span>
+          <button id="btn-lang-es" class="lang-btn" onclick="window.app.setLanguage('es')">ES</button>
+        </div>
+        
         <button id="btn-connect-wallet" class="btn-glow">
-          <span>🔗</span> Conectar
+          <span>🔗</span> <span data-i18n="btn_connect">Connect</span>
         </button>
         <button id="btn-disconnect-wallet" class="btn-wallet-connected" style="display:none;">
           <span class="pulse-dot"></span>
@@ -54,29 +61,29 @@
         <div class="welcome-hero">
           <div class="hero-glow"></div>
           <div class="hero-icon">🌿</div>
-          <h2>Governança<br><span>Comunitária</span></h2>
-          <p>Conecte sua carteira para participar das decisões que moldam nossa comunidade.</p>
+          <h2 data-i18n="hero_title_1">Community<br><span data-i18n="hero_title_2">Governance</span></h2>
+          <p data-i18n="hero_desc">Connect your wallet to participate in the decisions that shape our community.</p>
           <button class="btn-hero" onclick="document.getElementById('btn-connect-wallet').click()">
             <span class="btn-hero-icon">🔗</span>
-            Conectar MetaMask
+            <span data-i18n="btn_connect_wallet">Connect MetaMask</span>
           </button>
         </div>
         <div class="welcome-features">
           <div class="feat-card">
             <div class="feat-icon">💡</div>
-            <div class="feat-text"><strong>Sugira</strong><span>Proponha ideias</span></div>
+            <div class="feat-text"><strong data-i18n="feat_1_title">Suggest</strong><span data-i18n="feat_1_desc">Propose ideas</span></div>
           </div>
           <div class="feat-card">
             <div class="feat-icon">🗳️</div>
-            <div class="feat-text"><strong>Vote</strong><span>Quadratic Voting</span></div>
+            <div class="feat-text"><strong data-i18n="feat_2_title">Vote</strong><span data-i18n="feat_2_desc">Quadratic Voting</span></div>
           </div>
           <div class="feat-card">
             <div class="feat-icon">💬</div>
-            <div class="feat-text"><strong>Debata</strong><span>Sem custo de gas</span></div>
+            <div class="feat-text"><strong data-i18n="feat_3_title">Debate</strong><span data-i18n="feat_3_desc">Gas-free</span></div>
           </div>
           <div class="feat-card">
             <div class="feat-icon">📊</div>
-            <div class="feat-text"><strong>Resultados</strong><span>Transparente</span></div>
+            <div class="feat-text"><strong data-i18n="feat_4_title">Results</strong><span data-i18n="feat_4_desc">Transparent</span></div>
           </div>
         </div>
       </div>
@@ -88,30 +95,30 @@
       <!-- Admin Panel -->
       <div id="admin-panel" class="admin-panel glass-card" style="display:none;">
         <div class="admin-header-bar">
-          <span class="admin-badge">⚙️ Painel Administrativo</span>
+          <span class="admin-badge">⚙️ <span data-i18n="admin_panel">Admin Panel</span></span>
         </div>
         <div class="admin-grid">
           <div class="admin-block">
-            <label>Emitir NFT de Membro</label>
+            <label data-i18n="admin_mint_lbl">Mint Member NFT</label>
             <div class="inline-form">
-              <input type="text" id="admin-mint-address" placeholder="0x... endereço">
-              <button id="btn-admin-mint" class="btn-accent">Emitir</button>
+              <input type="text" id="admin-mint-address" placeholder="0x... address">
+              <button id="btn-admin-mint" class="btn-accent" data-i18n="btn_mint">Mint</button>
             </div>
           </div>
           <div class="admin-block">
-            <label>Criar Proposta Direta</label>
-            <input type="text" id="admin-prop-title" placeholder="Título da proposta">
-            <input type="text" id="admin-prop-desc" placeholder="Descrição">
+            <label data-i18n="admin_prop_lbl">Create Direct Proposal</label>
+            <input type="text" id="admin-prop-title" placeholder="Proposal Title" data-i18n-ph="ph_prop_title">
+            <input type="text" id="admin-prop-desc" placeholder="Description" data-i18n-ph="ph_prop_desc">
             <div class="inline-form">
               <input type="number" id="admin-prop-duration" value="2" min="1" max="60" class="input-mini">
-              <span class="label-suffix">minutos</span>
-              <button id="btn-admin-create-prop" class="btn-accent">Criar</button>
+              <span class="label-suffix" data-i18n="lbl_minutes">minutes</span>
+              <button id="btn-admin-create-prop" class="btn-accent" data-i18n="btn_create">Create</button>
             </div>
           </div>
           <div class="admin-block full-width">
-            <label>Promover Ideias → Proposta</label>
+            <label data-i18n="admin_promote_lbl">Promote Ideas → Proposal</label>
             <div id="admin-idea-list" class="admin-ideas-scroll">
-              <p class="empty-state">Nenhuma ideia no cesto</p>
+              <p class="empty-state" data-i18n="empty_admin_ideas">No ideas in the basket</p>
             </div>
           </div>
         </div>
@@ -120,7 +127,7 @@
       <!-- NFT Strip -->
       <div id="my-nfts-section" class="nft-strip glass-card" style="display:none;">
         <div class="nft-strip-head">
-          <span class="strip-label">🪪 Meus NFTs</span>
+          <span class="strip-label">🪪 <span data-i18n="my_nfts">My NFTs</span></span>
           <code id="user-address" class="addr-badge"></code>
         </div>
         <div id="my-nfts-list" class="nft-scroll"></div>
@@ -129,61 +136,61 @@
       <!-- Tab Navigation -->
       <nav class="tab-bar glass-card">
         <button class="tab active" data-tab="idea">
-          <span class="tab-emoji">💡</span><span class="tab-text">Ideias</span>
+          <span class="tab-emoji">💡</span><span class="tab-text" data-i18n="tab_ideas">Ideas</span>
         </button>
         <button class="tab" data-tab="voting">
-          <span class="tab-emoji">🗳️</span><span class="tab-text">Votação</span>
+          <span class="tab-emoji">🗳️</span><span class="tab-text" data-i18n="tab_proposals">Proposals</span>
         </button>
         <button class="tab" data-tab="results">
-          <span class="tab-emoji">📊</span><span class="tab-text">Resultados</span>
+          <span class="tab-emoji">📊</span><span class="tab-text" data-i18n="tab_results">Results</span>
         </button>
       </nav>
 
       <!-- TAB: Ideas -->
       <div id="tab-idea" class="tab-panel active">
         <div class="panel-head">
-          <h2>Cesto de Ideias</h2>
-          <p>Sugira e vote nas ideias da comunidade</p>
+          <h2 data-i18n="head_ideas">Idea Basket</h2>
+          <p data-i18n="desc_ideas">Suggest and vote on community ideas</p>
         </div>
 
         <div class="idea-form glass-card">
-          <h3>✨ Nova Ideia</h3>
-          <input type="text" id="idea-title" placeholder="Título da sua ideia..." class="input-lg">
-          <textarea id="idea-desc" placeholder="Descreva sua sugestão para a comunidade..." rows="3"></textarea>
+          <h3>✨ <span data-i18n="new_idea">New Idea</span></h3>
+          <input type="text" id="idea-title" placeholder="Your idea title..." class="input-lg" data-i18n-ph="ph_idea_title">
+          <textarea id="idea-desc" placeholder="Describe your suggestion for the community..." rows="3" data-i18n-ph="ph_idea_desc"></textarea>
           <div class="form-row">
             <select id="idea-nft-select" class="select-styled">
-              <option value="">Selecione seu NFT</option>
+              <option value="" data-i18n="opt_select_nft">Select your NFT</option>
             </select>
             <button id="btn-submit-idea" class="btn-primary">
-              🚀 Enviar Ideia
+              🚀 <span data-i18n="btn_submit_idea">Submit Idea</span>
             </button>
           </div>
         </div>
 
         <div id="idea-list" class="content-list">
-          <p class="empty-state">Conecte a carteira para ver as ideias.</p>
+          <p class="empty-state" data-i18n="empty_connect">Connect wallet to see ideas.</p>
         </div>
       </div>
 
-      <!-- TAB: Voting -->
+      <!-- TAB: Voting (Proposals) -->
       <div id="tab-voting" class="tab-panel">
         <div class="panel-head">
-          <h2>Votação Ativa</h2>
-          <p>Vote nas propostas oficiais da comunidade</p>
+          <h2 data-i18n="head_proposals">Active Voting</h2>
+          <p data-i18n="desc_proposals">Vote on official community proposals</p>
         </div>
         <div id="proposal-list" class="content-list">
-          <p class="empty-state">Nenhuma proposta ativa.</p>
+          <p class="empty-state" data-i18n="empty_proposals">No active proposals right now.</p>
         </div>
       </div>
 
       <!-- TAB: Results -->
       <div id="tab-results" class="tab-panel">
         <div class="panel-head">
-          <h2>Resultados</h2>
-          <p>Histórico de propostas encerradas</p>
+          <h2 data-i18n="head_results">Results</h2>
+          <p data-i18n="desc_results">History of closed proposals</p>
         </div>
         <div id="results-list" class="content-list">
-          <p class="empty-state">Nenhuma proposta encerrada.</p>
+          <p class="empty-state" data-i18n="empty_results">No closed proposals.</p>
         </div>
       </div>
 
