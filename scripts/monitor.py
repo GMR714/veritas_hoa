@@ -109,25 +109,49 @@ class C:
 
 def header(text):
     width = 62
-    print(f"\n{C.CYAN}{C.BOLD}{'═' * width}{C.RESET}")
+    try:
+        line = "═" * width
+        print(f"\n{C.CYAN}{C.BOLD}{line}{C.RESET}")
+    except UnicodeEncodeError:
+        line = "=" * width
+        print(f"\n{C.CYAN}{C.BOLD}{line}{C.RESET}")
     print(f"{C.CYAN}{C.BOLD}  {text}{C.RESET}")
-    print(f"{C.CYAN}{C.BOLD}{'═' * width}{C.RESET}")
+    try:
+        line = "═" * width
+        print(f"{C.CYAN}{C.BOLD}{line}{C.RESET}")
+    except UnicodeEncodeError:
+        line = "=" * width
+        print(f"{C.CYAN}{C.BOLD}{line}{C.RESET}")
 
 
 def section(text):
-    print(f"\n{C.BLUE}{C.BOLD}── {text} {'─' * (55 - len(text))}{C.RESET}")
+    try:
+        line = "──"
+        trail = "─" * (55 - len(text))
+        print(f"\n{C.BLUE}{C.BOLD}{line} {text} {trail}{C.RESET}")
+    except UnicodeEncodeError:
+        print(f"\n{C.BLUE}{C.BOLD}-- {text} {'-' * (55 - len(text))}{C.RESET}")
 
 
 def ok(text):
-    print(f"  {C.GREEN}✅ {text}{C.RESET}")
+    try:
+        print(f"  {C.GREEN}✅ {text}{C.RESET}")
+    except UnicodeEncodeError:
+        print(f"  {C.GREEN}[OK] {text}{C.RESET}")
 
 
 def warn(text):
-    print(f"  {C.YELLOW}⚠️  {text}{C.RESET}")
+    try:
+        print(f"  {C.YELLOW}⚠️  {text}{C.RESET}")
+    except UnicodeEncodeError:
+        print(f"  {C.YELLOW}[!] {text}{C.RESET}")
 
 
 def error(text):
-    print(f"  {C.RED}❌ {text}{C.RESET}")
+    try:
+        print(f"  {C.RED}❌ {text}{C.RESET}")
+    except UnicodeEncodeError:
+        print(f"  {C.RED}[X] {text}{C.RESET}")
 
 
 def info(text):
@@ -224,7 +248,7 @@ def scan_members(nft, treasury, days_threshold):
             if last_paid == 0:
                 status = "NUNCA PAGOU"
                 is_delinquent = True
-                days_overdue = "∞"
+                days_overdue = "INF"
             elif current_time - last_paid > threshold_seconds:
                 status = "INADIMPLENTE"
                 is_delinquent = True
@@ -270,22 +294,30 @@ def print_member_table(members, days_threshold):
     print(
         f"  {C.BOLD}{'ID':>4}  {'Proprietário':<15}  {'Último Pgto':<18}  {'Status':<15}  {'Atraso':<8}{C.RESET}"
     )
-    print(f"  {'─' * 4}  {'─' * 15}  {'─' * 18}  {'─' * 15}  {'─' * 8}")
+    try:
+        line = "─"
+        print(f"  {line * 4}  {line * 15}  {line * 18}  {line * 15}  {line * 8}")
+    except UnicodeEncodeError:
+        print(f"  {'-' * 4}  {'-' * 15}  {'-' * 18}  {'-' * 15}  {'-' * 8}")
 
     for m in members:
-        if m["is_delinquent"]:
-            status_color = C.RED
-            status_icon = "❌"
-        else:
-            status_color = C.GREEN
-            status_icon = "✅"
-
-        print(
-            f"  {m['nft_id']:>4}  {m['owner_short']:<15}  "
-            f"{m['last_paid_date']:<18}  "
-            f"{status_color}{status_icon} {m['status']:<13}{C.RESET}  "
-            f"{m['days_overdue']}"
-        )
+        status_color = C.RED if m["is_delinquent"] else C.GREEN
+        status_icon = "✅" if not m["is_delinquent"] else "❌"
+        try:
+            print(
+                f"  {m['nft_id']:>4}  {m['owner_short']:<15}  "
+                f"{m['last_paid_date']:<18}  "
+                f"{status_color}{status_icon} {m['status']:<13}{C.RESET}  "
+                f"{m['days_overdue']}"
+            )
+        except UnicodeEncodeError:
+            icon = "[OK]" if not m["is_delinquent"] else "[X]"
+            print(
+                f"  {m['nft_id']:>4}  {m['owner_short']:<15}  "
+                f"{m['last_paid_date']:<18}  "
+                f"{status_color}{icon} {m['status']:<13}{C.RESET}  "
+                f"{m['days_overdue']}"
+            )
 
     # Summary
     total = len(members)
@@ -301,9 +333,13 @@ def print_member_table(members, days_threshold):
         pct = (current / total) * 100
         bar_len = 30
         filled = int(bar_len * current / total)
-        bar = f"{'█' * filled}{'░' * (bar_len - filled)}"
         color = C.GREEN if pct >= 80 else C.YELLOW if pct >= 50 else C.RED
-        print(f"    Adimplência:       {color}{bar} {pct:.0f}%{C.RESET}")
+        try:
+            bar = f"{'█' * filled}{'░' * (bar_len - filled)}"
+            print(f"    Adimplência:       {color}{bar} {pct:.0f}%{C.RESET}")
+        except UnicodeEncodeError:
+            bar = f"{'#' * filled}{'.' * (bar_len - filled)}"
+            print(f"    Adimplencia:       {color}{bar} {pct:.0f}%{C.RESET}")
 
 
 def print_governance_cross(members, proposal_id):

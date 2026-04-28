@@ -34,6 +34,7 @@ contract VeritasGovernance is Ownable {
         string description;
         uint256 qvVotes; // Total quadratic votes received
         uint256 timestamp;
+        bool isPromoted;
     }
     uint256 public ideaCount;
     mapping(uint256 => Idea) public ideas;
@@ -78,11 +79,9 @@ contract VeritasGovernance is Ownable {
 
     constructor(
         address initialOwner,
-        address _memberNft,
-        address _treasury
+        address _memberNft
     ) Ownable(initialOwner) {
         memberNft = VeritasMemberNFT(_memberNft);
-        treasury = VeritasTreasury(_treasury);
         governanceStartTime = block.timestamp;
     }
 
@@ -118,7 +117,8 @@ contract VeritasGovernance is Ownable {
             title: _title,
             description: _description,
             qvVotes: 0,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            isPromoted: false
         });
 
         emit IdeaSubmitted(ideaCount, msg.sender, _title);
@@ -150,10 +150,42 @@ contract VeritasGovernance is Ownable {
 
         emit IdeaVoted(_ideaId, _nftId, _additionalVotes, marginalCost);
     }
-
     // ═══════════════════════════════════════════════════════════════
     //  PROPOSALS
     // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * @dev Promotes an idea into an official proposal.
+     * The idea's upvotes are carried over as "Votes For".
+     */
+    function promoteIdea(uint256 _ideaId, uint256 _durationMinutes) external onlyOwner returns (uint256) {
+        require(_ideaId > 0 && _ideaId <= ideaCount, "Governance: Idea does not exist");
+        Idea storage idea = ideas[_ideaId];
+        require(!idea.isPromoted, "Governance: Idea already promoted");
+
+        idea.isPromoted = true;
+
+        proposalCount++;
+        uint256 id = proposalCount;
+        uint256 end = block.timestamp + (_durationMinutes * 1 minutes);
+
+        proposals[id] = Proposal({
+            id: id,
+            title: idea.title,
+            description: idea.description,
+            votesFor: idea.qvVotes, // Carry over traction votes as "For"
+            votesAgainst: 0,
+            votesAbstain: 0,
+            startTime: block.timestamp,
+            endTime: end,
+            executed: false,
+            exists: true
+        });
+
+        emit ProposalCreated(id, idea.title, block.timestamp, end);
+        return id;
+    }
+
 
     /**
      * @dev Create an official proposal (usually from top ideas). Only Council.
