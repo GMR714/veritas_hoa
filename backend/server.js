@@ -9,7 +9,7 @@ const { db, stmts, CREDITS_PER_YEAR, getCurrentYear, getRemainingCredits, spendC
 //  CONFIG
 // ═══════════════════════════════════════════════════════════════
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'veritas-mvp-secret-2024';
 const RPC_URL = process.env.RPC_URL || 'https://public-node.testnet.rsk.co';
 const NFT_ADDRESS = process.env.NFT_ADDRESS || '0xa1851Eb7B8aC7a684ef22EC3b3766A7583d62A80';
