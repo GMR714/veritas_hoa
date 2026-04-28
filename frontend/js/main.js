@@ -44,8 +44,6 @@ const i18n = {
     err_fill_title: "Fill in the title",
     msg_prop_ok: "Proposal created! 🗳️",
     msg_acct_change: "Account changed — reconnecting.",
-    msg_auto_promote: "Auto-promoting",
-    msg_promoted_ok: "Idea promoted! 🚀",
     promoting: "Promoting..."
   },
   es: {
@@ -86,8 +84,6 @@ const i18n = {
     err_fill_title: "Completa el título",
     msg_prop_ok: "¡Propuesta creada! 🗳️",
     msg_acct_change: "Cuenta cambiada — reconectando.",
-    msg_auto_promote: "Autopromoviendo",
-    msg_promoted_ok: "¡Idea promovida! 🚀",
     promoting: "Promoviendo..."
   }
 };
@@ -116,7 +112,8 @@ function updateStaticTranslations() {
         head_ideas: "Idea Basket", desc_ideas: "Suggest and vote on community ideas", new_idea: "New Idea",
         opt_select_nft: "Select your NFT", btn_submit_idea: "Submit Idea", empty_connect: "Connect wallet to see ideas.",
         head_proposals: "Active Voting", desc_proposals: "Vote on official community proposals", empty_proposals: "No active proposals right now.",
-        head_results: "Results", desc_results: "History of closed proposals", empty_results: "No closed proposals."
+        head_results: "Results", desc_results: "History of closed proposals", empty_results: "No closed proposals.",
+        next_batch: "Next Batch"
       },
       es: {
         nav_governance: "Gobernanza", btn_connect: "Conectar",
@@ -130,7 +127,8 @@ function updateStaticTranslations() {
         head_ideas: "Cesta de Ideas", desc_ideas: "Sugiere y vota por ideas de la comunidad", new_idea: "Nueva Idea",
         opt_select_nft: "Selecciona tu NFT", btn_submit_idea: "Enviar Idea", empty_connect: "Conecta la billetera para ver ideas.",
         head_proposals: "Votación Activa", desc_proposals: "Vota en propuestas oficiales de la comunidad", empty_proposals: "No hay propuestas activas.",
-        head_results: "Resultados", desc_results: "Historial de propuestas cerradas", empty_results: "No hay propuestas cerradas."
+        head_results: "Resultados", desc_results: "Historial de propuestas cerradas", empty_results: "No hay propuestas cerradas.",
+        next_batch: "Próxima Ronda"
       }
     };
     if (staticDict[currentLang][key]) el.innerHTML = staticDict[currentLang][key];
@@ -159,6 +157,7 @@ const state = {
   ideas: [],
   proposals: [],
   isAdmin: false,
+  nextBatchTime: 0
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -221,20 +220,22 @@ function renderIdeaList() {
     ? state.myNFTs.map(n => `<option value="${n.id}">NFT #${n.id}</option>`).join('')
     : `<option value="">${t('no_nft')}</option>`;
 
-  c.innerHTML = state.ideas.map(idea => {
-    const promoteAt = idea.timestamp + 120; // 2 minutes auto-promote
+  c.innerHTML = state.ideas.map((idea, index) => {
+    const isTop10 = index < 10;
+    const rankBadge = isTop10 ? `<span style="font-size:0.7rem; background:var(--gold); color:#000; padding:2px 6px; border-radius:4px; font-weight:700;">TOP ${index+1}</span>` : '';
+    
     const comments = (idea.comments || []).map(cm =>
       `<div class="comment-bubble"><strong>${cm.author.substring(0, 8)}...:</strong> ${cm.text}</div>`
     ).join('');
 
     return `
-    <div class="idea-card">
+    <div class="idea-card ${isTop10 ? 'top-idea' : ''}" ${isTop10 ? 'style="border-color: rgba(245,158,11,0.4);"' : ''}>
       <div class="idea-top">
         <div class="vote-badge">${idea.qv_votes}<small>${t('votes')}</small></div>
         <div class="idea-body">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
             <h4 style="margin:0;">${idea.title}</h4>
-            <span class="timer-pill idea-timer" data-promote-at="${promoteAt}"></span>
+            ${rankBadge}
           </div>
           <p style="margin-top:4px;">${idea.description}</p>
         </div>
@@ -443,7 +444,10 @@ async function syncData() {
       state.isAdmin = userData.isAdmin;
       document.getElementById('admin-panel').style.display = state.isAdmin ? 'block' : 'none';
     }
-    state.ideas = await api('/ideas');
+    const ideasData = await api('/ideas');
+    state.ideas = ideasData.ideas;
+    state.nextBatchTime = ideasData.nextBatchTime;
+    
     state.proposals = await api('/proposals');
     refreshUI();
   } catch (err) {
@@ -614,44 +618,30 @@ function init() {
     });
   }
 
-  // Admin auto-promote bot
-  setInterval(async () => {
-    if (!state.isAdmin || !authToken) return;
-    const now = Math.floor(Date.now() / 1000);
-    for (const idea of state.ideas) {
-      if ((now - idea.timestamp) >= 120) {
-        try {
-          notify(`${t('msg_auto_promote')} "${idea.title}"...`, 'info');
-          await api(`/admin/promote/${idea.id}`, {
-            method: 'POST',
-            body: JSON.stringify({ durationMinutes: 2 })
-          });
-          notify(t('msg_promoted_ok'), 'success');
-          await syncData();
-        } catch (e) { console.error('Auto-promote:', e); }
-      }
-    }
-  }, 10000);
-
   // Auto-refresh
   setInterval(async () => {
     if (authToken) await syncData();
-  }, 15000);
+  }, 10000);
 
-  // Live timer tick
+  // Global batch timer tick
   setInterval(() => {
+    const el = document.getElementById('global-batch-timer');
+    if (!el || !state.nextBatchTime) return;
+    
     const now = Math.floor(Date.now() / 1000);
-    document.querySelectorAll('.idea-timer').forEach(el => {
-      const promoteAt = parseInt(el.getAttribute('data-promote-at'));
-      const left = promoteAt - now;
-      if (left > 0) {
-        const m = Math.floor(left / 60);
-        const s = left % 60;
-        el.textContent = `⏱ ${m}:${s.toString().padStart(2, '0')}`;
-      } else {
-        el.textContent = `🔄 ${t('promoting')}`;
-      }
-    });
+    const left = state.nextBatchTime - now;
+    
+    if (left > 0) {
+      const m = Math.floor(left / 60);
+      const s = left % 60;
+      el.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      el.style.color = "var(--gold)";
+    } else {
+      el.textContent = `00:00`;
+      el.style.color = "var(--green)";
+      // If we are at zero, trigger a quick sync to get the new batch
+      if (left === 0 && authToken) syncData();
+    }
   }, 1000);
 }
 

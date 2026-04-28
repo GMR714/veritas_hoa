@@ -142,12 +142,18 @@ app.get('/api/ideas', (req, res) => {
   const ideas = stmts.getAllIdeas.all();
 
   // Attach comments to each idea
-  const result = ideas.map(idea => ({
+  const list = ideas.map(idea => ({
     ...idea,
     comments: stmts.getCommentsByIdea.all(idea.id)
   }));
 
-  res.json(result);
+  // Sort by qv_votes DESC to show Top 10 visually
+  list.sort((a, b) => b.qv_votes - a.qv_votes);
+
+  res.json({
+    ideas: list,
+    nextBatchTime
+  });
 });
 
 app.post('/api/ideas', authMiddleware, (req, res) => {
@@ -350,6 +356,63 @@ app.post('/api/admin/create-proposal', authMiddleware, adminMiddleware, (req, re
 
   res.json({ id: result.lastInsertRowid, message: 'Proposta criada!' });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  BATCH PROMOTION (Top 10)
+// ═══════════════════════════════════════════════════════════════
+
+const BATCH_CYCLE_MINUTES = 2; // For MVP testing
+let nextBatchTime = Math.floor(Date.now() / 1000) + (BATCH_CYCLE_MINUTES * 60);
+
+function executeBatchPromotion() {
+  console.log(`[Batch] Running global promotion cycle...`);
+  const ideas = stmts.getAllIdeas.all();
+  
+  // Sort descending by qv_votes
+  ideas.sort((a, b) => b.qv_votes - a.qv_votes);
+  
+  // Take top 10
+  const top10 = ideas.slice(0, 10);
+  const now = Math.floor(Date.now() / 1000);
+  const endTime = now + (5 * 60); // promoted proposals last 5 mins for testing
+
+  if (top10.length > 0) {
+    const promote = db.transaction(() => {
+      for (const idea of top10) {
+        stmts.promoteIdea.run(idea.id);
+        stmts.insertProposal.run(
+          idea.title,
+          idea.description,
+          idea.qv_votes, // Carry over traction votes as "For"
+          0,
+          now,
+          endTime,
+          idea.id
+        );
+        console.log(`[Batch] Promoted Top Idea: "${idea.title}" (${idea.qv_votes} votes)`);
+      }
+    });
+
+    try {
+      promote();
+    } catch (e) {
+      console.error('[Batch] Promotion error:', e);
+    }
+  } else {
+    console.log(`[Batch] No active ideas to promote.`);
+  }
+
+  // Reset timer
+  nextBatchTime = Math.floor(Date.now() / 1000) + (BATCH_CYCLE_MINUTES * 60);
+}
+
+// Global loop checking if batch cycle is due
+setInterval(() => {
+  const now = Math.floor(Date.now() / 1000);
+  if (now >= nextBatchTime) {
+    executeBatchPromotion();
+  }
+}, 1000);
 
 // ═══════════════════════════════════════════════════════════════
 //  STARTUP

@@ -148,9 +148,15 @@
 
       <!-- TAB: Ideas -->
       <div id="tab-idea" class="tab-panel active">
-        <div class="panel-head">
-          <h2 data-i18n="head_ideas">Idea Basket</h2>
-          <p data-i18n="desc_ideas">Suggest and vote on community ideas</p>
+        <div class="panel-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+          <div>
+            <h2 data-i18n="head_ideas">Idea Basket</h2>
+            <p data-i18n="desc_ideas">Suggest and vote on community ideas</p>
+          </div>
+          <div class="batch-timer-box" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); padding:6px 12px; border-radius:8px; text-align:center; min-width:110px;">
+            <div style="font-size:0.65rem; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;" data-i18n="next_batch">Next Batch</div>
+            <div id="global-batch-timer" style="font-size:1.1rem; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; margin-top:2px;">--:--</div>
+          </div>
         </div>
 
         <div class="idea-form glass-card">
