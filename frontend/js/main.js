@@ -1,4 +1,5 @@
 import { API_URL, CONTRACT_ADDRESSES, ABIS } from './config.js';
+const ethers = window.ethers;
 
 // ═══════════════════════════════════════════════════════════════
 //  STATE
