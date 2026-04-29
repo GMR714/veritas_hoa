@@ -1,4 +1,5 @@
 import { API_URL, CONTRACT_ADDRESSES, ABIS } from './config.js';
+import { initThreeJS, triggerActionEffect } from './three-scene.js';
 const ethers = window.ethers;
 
 // ═══════════════════════════════════════════════════════════════
@@ -234,7 +235,7 @@ function renderIdeaList() {
       `<div class="comment-bubble"><strong>${cm.author.substring(0, 8)}...:</strong> ${cm.text}</div>`
     ).join('');
 
-    return `
+    let html = `
     <div class="idea-card ${isTop10 ? 'top-idea' : ''}" ${isTop10 ? 'style="border-color: rgba(245,158,11,0.4);"' : ''}>
       <div class="idea-top">
         <div class="vote-badge">${idea.qv_votes}<small>${t('votes')}</small></div>
@@ -276,6 +277,8 @@ function renderIdeaList() {
         </div>
       </div>
     </div>`;
+    
+    return html;
   }).join('');
 }
 
@@ -300,7 +303,7 @@ function renderProposalList() {
       const forPct = Math.round((p.votes_for / total) * 100);
       const againstPct = Math.round((p.votes_against / total) * 100);
 
-      return `
+      let html = `
       <div class="proposal-card">
         <div class="prop-header">
           <h4>${p.title}</h4>
@@ -386,11 +389,6 @@ function renderAdminIdeaList() {
       <button class="btn-sm btn-promote" onclick="window.app.promoteIdea(${idea.id})">${t('btn_promote')}</button>
     </div>
   `).join('');
-}
-
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-  document.querySelectorAll('.tab-panel').forEach(c => c.classList.toggle('active', c.id === `tab-${name}`));
 }
 
 function refreshUI() {
@@ -524,6 +522,7 @@ window.app = {
         body: JSON.stringify({ nftId, additionalVotes })
       });
       notify(`${t('msg_vote_ok')} ${result.marginalCost} cr`, 'success');
+      triggerActionEffect('vote');
       await syncData();
     } catch (e) { notify(e.message, 'error'); }
   },
@@ -568,6 +567,7 @@ window.app = {
         body: JSON.stringify({ nftId, choice, additionalVotes })
       });
       notify(`${t('msg_vote_ok')} ${result.marginalCost} cr`, 'success');
+      triggerActionEffect('vote');
       await syncData();
     } catch (e) { notify(e.message, 'error'); }
   },
@@ -593,7 +593,6 @@ window.app = {
       });
       notify(t('msg_promoted_ok'), 'success');
       await syncData();
-      switchTab('voting');
     } catch (e) { notify(e.message, 'error'); }
   }
 };
@@ -603,12 +602,14 @@ window.app = {
 // ═══════════════════════════════════════════════════════════════
 
 function init() {
+  // Init ThreeJS background
+  initThreeJS();
+
   // Init static UI language
   updateStaticTranslations();
 
   document.getElementById('btn-connect-wallet').onclick = connectWallet;
   document.getElementById('btn-disconnect-wallet').onclick = disconnectWallet;
-  document.querySelectorAll('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
 
   // Submit idea
   document.getElementById('btn-submit-idea').onclick = async () => {
@@ -671,7 +672,6 @@ function init() {
       document.getElementById('admin-prop-title').value = '';
       document.getElementById('admin-prop-desc').value = '';
       await syncData();
-      switchTab('voting');
     } catch (e) { notify(e.message, 'error'); }
   };
 

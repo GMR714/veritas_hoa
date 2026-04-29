@@ -12,9 +12,8 @@
 </head>
 <body>
 
-  <!-- Animated background -->
-  <div class="bg-gradient"></div>
-  <div class="bg-pattern"></div>
+  <!-- Animated 3D background -->
+  <div id="three-canvas-container"></div>
 
   <!-- ═══════════════ HEADER ═══════════════ -->
   <header id="app-header">
@@ -126,32 +125,10 @@
         <div id="my-nfts-list" class="nft-scroll"></div>
       </div>
 
-      <!-- Tab Navigation -->
-      <nav class="tab-bar glass-card">
-        <button class="tab active" data-tab="idea">
-          <span class="tab-emoji">💡</span><span class="tab-text" data-i18n="tab_ideas">Ideas</span>
-        </button>
-        <button class="tab" data-tab="voting">
-          <span class="tab-emoji">🗳️</span><span class="tab-text" data-i18n="tab_proposals">Proposals</span>
-        </button>
-        <button class="tab" data-tab="results">
-          <span class="tab-emoji">📊</span><span class="tab-text" data-i18n="tab_results">Results</span>
-        </button>
-      </nav>
+      <!-- Feed Layout (No Tabs) -->
+      <div class="feed-layout">
 
-      <!-- TAB: Ideas -->
-      <div id="tab-idea" class="tab-panel active">
-        <div class="panel-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-          <div>
-            <h2 data-i18n="head_ideas">Idea Basket</h2>
-            <p data-i18n="desc_ideas">Suggest and vote on community ideas</p>
-          </div>
-          <div class="batch-timer-box" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); padding:6px 12px; border-radius:8px; text-align:center; min-width:110px;">
-            <div style="font-size:0.65rem; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;" data-i18n="next_batch">Next Batch</div>
-            <div id="global-batch-timer" style="font-size:1.1rem; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; margin-top:2px;">--:--</div>
-          </div>
-        </div>
-
+        <!-- Section: New Idea Form -->
         <div class="idea-form glass-card">
           <h3>✨ <span data-i18n="new_idea">New Idea</span></h3>
           <input type="text" id="idea-title" placeholder="Your idea title..." class="input-lg" data-i18n-ph="ph_idea_title">
@@ -166,31 +143,45 @@
           </div>
         </div>
 
-        <div id="idea-list" class="content-list">
-          <p class="empty-state" data-i18n="empty_connect">Connect wallet to see ideas.</p>
+        <!-- Section: Active Proposals -->
+        <div class="feed-section">
+          <div class="section-head">
+            <h2 data-i18n="head_proposals">Active Voting</h2>
+            <p data-i18n="desc_proposals">Vote on official community proposals</p>
+          </div>
+          <div id="proposal-list" class="content-list">
+            <p class="empty-state" data-i18n="empty_proposals">No active proposals right now.</p>
+          </div>
         </div>
-      </div>
 
-      <!-- TAB: Voting (Proposals) -->
-      <div id="tab-voting" class="tab-panel">
-        <div class="panel-head">
-          <h2 data-i18n="head_proposals">Active Voting</h2>
-          <p data-i18n="desc_proposals">Vote on official community proposals</p>
+        <!-- Section: Idea Basket -->
+        <div class="feed-section">
+          <div class="section-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+            <div>
+              <h2 data-i18n="head_ideas">Idea Basket</h2>
+              <p data-i18n="desc_ideas">Suggest and vote on community ideas</p>
+            </div>
+            <div class="batch-timer-box" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); padding:6px 12px; border-radius:8px; text-align:center; min-width:110px;">
+              <div style="font-size:0.65rem; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;" data-i18n="next_batch">Next Batch</div>
+              <div id="global-batch-timer" style="font-size:1.1rem; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; margin-top:2px;">--:--</div>
+            </div>
+          </div>
+          <div id="idea-list" class="content-list">
+            <p class="empty-state" data-i18n="empty_connect">Connect wallet to see ideas.</p>
+          </div>
         </div>
-        <div id="proposal-list" class="content-list">
-          <p class="empty-state" data-i18n="empty_proposals">No active proposals right now.</p>
-        </div>
-      </div>
 
-      <!-- TAB: Results -->
-      <div id="tab-results" class="tab-panel">
-        <div class="panel-head">
-          <h2 data-i18n="head_results">Results</h2>
-          <p data-i18n="desc_results">History of closed proposals</p>
+        <!-- Section: Results -->
+        <div class="feed-section">
+          <div class="section-head">
+            <h2 data-i18n="head_results">Results</h2>
+            <p data-i18n="desc_results">History of closed proposals</p>
+          </div>
+          <div id="results-list" class="content-list">
+            <p class="empty-state" data-i18n="empty_results">No closed proposals.</p>
+          </div>
         </div>
-        <div id="results-list" class="content-list">
-          <p class="empty-state" data-i18n="empty_results">No closed proposals.</p>
-        </div>
+
       </div>
 
     </section>
@@ -198,6 +189,16 @@
 
   <!-- Toasts -->
   <div id="notifications" class="toast-stack"></div>
+
+  <!-- Import map for Three.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
+      }
+    }
+  </script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
   <script type="module" src="js/main.js"></script>
