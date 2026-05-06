@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Veritas Villages — Community Governance</title>
-  <meta name="description" content="Veritas Villages Governance Platform. Vote on ideas and proposals using Quadratic Voting.">
+  <title>Veritas Villages — Community Platform</title>
+  <meta name="description" content="Veritas Villages Community Platform. Governance, Chat, Finances, Marketplace and more.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -18,25 +18,24 @@
   <!-- ═══════════════ HEADER ═══════════════ -->
   <header id="app-header">
     <div class="header-inner">
-      <div class="header-brand">
-        <div class="logo-mark">
-          <img src="assets/logo.png" alt="Veritas Logo">
-        </div>
-        <div class="header-titles">
-          <h1>Veritas Villages</h1>
-          <span class="header-tag" data-i18n="nav_governance">Governance</span>
+      <div class="header-left">
+        <button id="btn-hamburger" class="btn-hamburger" onclick="document.body.classList.toggle('sidebar-open')">☰</button>
+        <div class="header-brand">
+          <div class="logo-mark"><img src="assets/logo.png" alt="Veritas Logo"></div>
+          <div class="header-titles">
+            <h1>Veritas Villages</h1>
+            <span class="header-tag" data-i18n="nav_governance">Community Platform</span>
+          </div>
         </div>
       </div>
       <div class="header-actions">
-        <!-- Language Switcher -->
         <div class="lang-switch">
           <button id="btn-lang-en" class="lang-btn active" onclick="window.app.setLanguage('en')">EN</button>
           <span class="lang-sep">|</span>
           <button id="btn-lang-es" class="lang-btn" onclick="window.app.setLanguage('es')">ES</button>
         </div>
-        
         <button id="btn-connect-wallet" class="btn-glow">
-          <span>🔗</span> <span data-i18n="btn_connect">Connect</span>
+          <span>🔗</span> <span data-i18n="btn_connect">Connect Wallet</span>
         </button>
         <button id="btn-disconnect-wallet" class="btn-wallet-connected" style="display:none;">
           <span class="pulse-dot"></span>
@@ -46,151 +45,180 @@
     </div>
   </header>
 
-  <!-- ═══════════════ WELCOME ═══════════════ -->
-  <main id="app-main">
-    <section id="welcome-screen" class="welcome-section">
-      <div class="welcome-glass">
-        <div class="welcome-hero">
-          <div class="hero-glow"></div>
-          <div class="hero-icon">🌿</div>
-          <h2 data-i18n="hero_title_1">Community<br><span data-i18n="hero_title_2">Governance</span></h2>
-          <p data-i18n="hero_desc">Connect your wallet to participate in the decisions that shape our community.</p>
-          <button class="btn-hero" onclick="document.getElementById('btn-connect-wallet').click()">
-            <span class="btn-hero-icon">🔗</span>
-            <span data-i18n="btn_connect_wallet">Connect MetaMask</span>
-          </button>
-        </div>
-        <div class="welcome-features">
-          <div class="feat-card">
-            <div class="feat-icon">💡</div>
-            <div class="feat-text"><strong data-i18n="feat_1_title">Suggest</strong><span data-i18n="feat_1_desc">Propose ideas</span></div>
-          </div>
-          <div class="feat-card">
-            <div class="feat-icon">🗳️</div>
-            <div class="feat-text"><strong data-i18n="feat_2_title">Vote</strong><span data-i18n="feat_2_desc">Quadratic Voting</span></div>
-          </div>
-          <div class="feat-card">
-            <div class="feat-icon">💬</div>
-            <div class="feat-text"><strong data-i18n="feat_3_title">Debate</strong><span data-i18n="feat_3_desc">Gas-free</span></div>
-          </div>
-          <div class="feat-card">
-            <div class="feat-icon">📊</div>
-            <div class="feat-text"><strong data-i18n="feat_4_title">Results</strong><span data-i18n="feat_4_desc">Transparent</span></div>
-          </div>
-        </div>
+  <!-- ═══════════════ LAYOUT ═══════════════ -->
+  <div id="app-layout">
+
+    <!-- Sidebar -->
+    <aside id="app-sidebar" style="display:none;">
+      <nav id="sidebar-nav"></nav>
+      <div class="sidebar-footer">
+        <span class="sidebar-version">Veritas v2.0</span>
       </div>
-    </section>
+    </aside>
 
-    <!-- ═══════════════ DASHBOARD ═══════════════ -->
-    <section id="dashboard" style="display:none;">
+    <!-- Main Content -->
+    <main id="app-main">
 
-      <!-- Admin Panel -->
-      <div id="admin-panel" class="admin-panel glass-card" style="display:none;">
-        <div class="admin-header-bar">
-          <span class="admin-badge">⚙️ <span data-i18n="admin_panel">Admin Panel</span></span>
-        </div>
-        <div class="admin-grid">
-          <div class="admin-block">
-            <label data-i18n="admin_mint_lbl">Mint Member NFT</label>
-            <div class="inline-form">
-              <input type="text" id="admin-mint-address" placeholder="0x... address">
-              <button id="btn-admin-mint" class="btn-accent" data-i18n="btn_mint">Mint</button>
-            </div>
-          </div>
-          <div class="admin-block">
-            <label data-i18n="admin_prop_lbl">Create Direct Proposal</label>
-            <input type="text" id="admin-prop-title" placeholder="Proposal Title" data-i18n-ph="ph_prop_title">
-            <input type="text" id="admin-prop-desc" placeholder="Description" data-i18n-ph="ph_prop_desc">
-            <div class="inline-form">
-              <input type="number" id="admin-prop-duration" value="2" min="1" max="60" class="input-mini">
-              <span class="label-suffix" data-i18n="lbl_minutes">minutes</span>
-              <button id="btn-admin-create-prop" class="btn-accent" data-i18n="btn_create">Create</button>
-            </div>
-          </div>
-          <div class="admin-block full-width">
-            <label data-i18n="admin_promote_lbl">Promote Ideas → Proposal</label>
-            <div id="admin-idea-list" class="admin-ideas-scroll">
-              <p class="empty-state" data-i18n="empty_admin_ideas">No ideas in the basket</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- NFT Strip -->
-      <div id="my-nfts-section" class="nft-strip glass-card" style="display:none;">
-        <div class="nft-strip-head">
-          <span class="strip-label">🪪 <span data-i18n="my_nfts">My NFTs</span></span>
-          <code id="user-address" class="addr-badge"></code>
-        </div>
-        <div id="my-nfts-list" class="nft-scroll"></div>
-      </div>
-
-      <!-- Feed Layout (No Tabs) -->
-      <div class="feed-layout">
-
-        <!-- Section: New Idea Form -->
-        <div class="idea-form glass-card">
-          <h3>✨ <span data-i18n="new_idea">New Idea</span></h3>
-          <input type="text" id="idea-title" placeholder="Your idea title..." class="input-lg" data-i18n-ph="ph_idea_title">
-          <textarea id="idea-desc" placeholder="Describe your suggestion for the community..." rows="3" data-i18n-ph="ph_idea_desc"></textarea>
-          <div class="form-row">
-            <select id="idea-nft-select" class="select-styled">
-              <option value="" data-i18n="opt_select_nft">Select your NFT</option>
-            </select>
-            <button id="btn-submit-idea" class="btn-primary">
-              🚀 <span data-i18n="btn_submit_idea">Submit Idea</span>
+      <!-- ═══ WELCOME SCREEN ═══ -->
+      <section id="welcome-screen" class="welcome-section">
+        <div class="welcome-glass">
+          <div class="welcome-hero">
+            <div class="hero-glow"></div>
+            <div class="hero-icon">🌿</div>
+            <h2 data-i18n="hero_title_1">Community<br><span data-i18n="hero_title_2">Platform</span></h2>
+            <p data-i18n="hero_desc">Connect your wallet to access the full community platform, or browse as a guest with a demo NFT.</p>
+            <button class="btn-hero" onclick="document.getElementById('btn-connect-wallet').click()">
+              <span class="btn-hero-icon">🔗</span>
+              <span data-i18n="btn_connect_wallet">Connect Wallet</span>
+            </button>
+            <button class="btn-hero btn-hero-guest" onclick="window.app.enterAsGuest()" style="margin-top:12px; background:rgba(255,255,255,0.08); box-shadow:none; border:1px solid rgba(255,255,255,0.15);">
+              <span class="btn-hero-icon">🎭</span>
+              <span data-i18n="btn_guest">Browse as Guest (Demo NFT)</span>
             </button>
           </div>
-        </div>
-
-        <!-- Section: Active Proposals -->
-        <div class="feed-section">
-          <div class="section-head">
-            <h2 data-i18n="head_proposals">Active Voting</h2>
-            <p data-i18n="desc_proposals">Vote on official community proposals</p>
-          </div>
-          <div id="proposal-list" class="content-list">
-            <p class="empty-state" data-i18n="empty_proposals">No active proposals right now.</p>
+          <div class="welcome-features">
+            <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-text"><strong>Chat</strong><span>Real-time</span></div></div>
+            <div class="feat-card"><div class="feat-icon">🗳️</div><div class="feat-text"><strong>Vote</strong><span>Quadratic</span></div></div>
+            <div class="feat-card"><div class="feat-icon">💰</div><div class="feat-text"><strong>Finances</strong><span>Transparent</span></div></div>
+            <div class="feat-card"><div class="feat-icon">🛒</div><div class="feat-text"><strong>Market</strong><span>Buy & Sell</span></div></div>
           </div>
         </div>
+      </section>
 
-        <!-- Section: Idea Basket -->
-        <div class="feed-section">
-          <div class="section-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-            <div>
-              <h2 data-i18n="head_ideas">Idea Basket</h2>
-              <p data-i18n="desc_ideas">Suggest and vote on community ideas</p>
+      <!-- ═══ DASHBOARD (all modules) ═══ -->
+      <section id="dashboard" style="display:none;">
+
+        <!-- MODULE: Governance -->
+        <div id="module-governance" class="module-section">
+          <div id="admin-panel" class="admin-panel glass-card" style="display:none;">
+            <div class="admin-header-bar"><span class="admin-badge">⚙️ <span data-i18n="admin_panel">Admin Panel</span></span></div>
+            <div class="admin-grid">
+              <div class="admin-block">
+                <label data-i18n="admin_mint_lbl">Mint Member NFT</label>
+                <div class="inline-form">
+                  <input type="text" id="admin-mint-address" placeholder="0x... address">
+                  <button id="btn-admin-mint" class="btn-accent" data-i18n="btn_mint">Mint</button>
+                </div>
+              </div>
+              <div class="admin-block">
+                <label data-i18n="admin_prop_lbl">Create Direct Proposal</label>
+                <input type="text" id="admin-prop-title" placeholder="Proposal Title" data-i18n-ph="ph_prop_title">
+                <input type="text" id="admin-prop-desc" placeholder="Description" data-i18n-ph="ph_prop_desc">
+                <div class="inline-form">
+                  <input type="number" id="admin-prop-duration" value="2" min="1" max="60" class="input-mini">
+                  <span class="label-suffix" data-i18n="lbl_minutes">minutes</span>
+                  <button id="btn-admin-create-prop" class="btn-accent" data-i18n="btn_create">Create</button>
+                </div>
+              </div>
+              <div class="admin-block full-width">
+                <label data-i18n="admin_promote_lbl">Promote Ideas → Proposal</label>
+                <div id="admin-idea-list" class="admin-ideas-scroll">
+                  <p class="empty-state" data-i18n="empty_admin_ideas">No ideas in the basket</p>
+                </div>
+              </div>
             </div>
-            <div class="batch-timer-box" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); padding:6px 12px; border-radius:8px; text-align:center; min-width:110px;">
-              <div style="font-size:0.65rem; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;" data-i18n="next_batch">Next Batch</div>
-              <div id="global-batch-timer" style="font-size:1.1rem; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; margin-top:2px;">--:--</div>
+          </div>
+
+          <div id="my-nfts-section" class="nft-strip glass-card" style="display:none;">
+            <div class="nft-strip-head">
+              <span class="strip-label">🪪 <span data-i18n="my_nfts">My NFTs</span></span>
+              <code id="user-address" class="addr-badge"></code>
+            </div>
+            <div id="my-nfts-list" class="nft-scroll"></div>
+          </div>
+
+          <div class="feed-layout">
+            <div class="idea-form glass-card">
+              <h3>✨ <span data-i18n="new_idea">New Idea</span></h3>
+              <input type="text" id="idea-title" placeholder="Your idea title..." class="input-lg" data-i18n-ph="ph_idea_title">
+              <textarea id="idea-desc" placeholder="Describe your suggestion..." rows="3" data-i18n-ph="ph_idea_desc"></textarea>
+              <div class="form-row">
+                <select id="idea-nft-select" class="select-styled"><option value="" data-i18n="opt_select_nft">Select your NFT</option></select>
+                <button id="btn-submit-idea" class="btn-primary">🚀 <span data-i18n="btn_submit_idea">Submit Idea</span></button>
+              </div>
+            </div>
+            <div class="feed-section">
+              <div class="section-head">
+                <h2 data-i18n="head_proposals">Active Voting</h2>
+                <p data-i18n="desc_proposals">Vote on official community proposals</p>
+              </div>
+              <div id="proposal-list" class="content-list"><p class="empty-state" data-i18n="empty_proposals">No active proposals right now.</p></div>
+            </div>
+            <div class="feed-section">
+              <div class="section-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+                <div><h2 data-i18n="head_ideas">Idea Basket</h2><p data-i18n="desc_ideas">Suggest and vote on community ideas</p></div>
+                <div class="batch-timer-box" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); padding:6px 12px; border-radius:8px; text-align:center; min-width:110px;">
+                  <div style="font-size:0.65rem; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;" data-i18n="next_batch">Next Batch</div>
+                  <div id="global-batch-timer" style="font-size:1.1rem; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; margin-top:2px;">--:--</div>
+                </div>
+              </div>
+              <div id="idea-list" class="content-list"><p class="empty-state" data-i18n="empty_connect">Connect wallet to see ideas.</p></div>
+            </div>
+            <div class="feed-section">
+              <div class="section-head"><h2 data-i18n="head_results">Results</h2><p data-i18n="desc_results">History of closed proposals</p></div>
+              <div id="results-list" class="content-list"><p class="empty-state" data-i18n="empty_results">No closed proposals.</p></div>
             </div>
           </div>
-          <div id="idea-list" class="content-list">
-            <p class="empty-state" data-i18n="empty_connect">Connect wallet to see ideas.</p>
-          </div>
         </div>
 
-        <!-- Section: Results -->
-        <div class="feed-section">
-          <div class="section-head">
-            <h2 data-i18n="head_results">Results</h2>
-            <p data-i18n="desc_results">History of closed proposals</p>
-          </div>
-          <div id="results-list" class="content-list">
-            <p class="empty-state" data-i18n="empty_results">No closed proposals.</p>
-          </div>
-        </div>
+        <!-- MODULE CONTAINERS -->
+        <div id="module-chat" class="module-section" style="display:none;"><div id="chat-content"><p class="empty-state">Loading chat...</p></div></div>
+        <div id="module-rules" class="module-section" style="display:none;"><div id="rules-content"><p class="empty-state">Loading rules...</p></div></div>
+        <div id="module-finances" class="module-section" style="display:none;"><div id="finances-content"><p class="empty-state">Loading finances...</p></div></div>
+        <div id="module-food" class="module-section" style="display:none;"><div id="food-content"><p class="empty-state">Loading...</p></div></div>
+        <div id="module-solar" class="module-section" style="display:none;"><div id="solar-content"><p class="empty-state">Loading...</p></div></div>
+        <div id="module-water" class="module-section" style="display:none;"><div id="water-content"><p class="empty-state">Loading...</p></div></div>
+        <div id="module-security" class="module-section" style="display:none;"><div id="security-content"><p class="empty-state">Loading...</p></div></div>
+        <div id="module-announcements" class="module-section" style="display:none;"><div id="announcements-content"><p class="empty-state">Loading...</p></div></div>
+        <div id="module-marketplace" class="module-section" style="display:none;"><div id="marketplace-content"><p class="empty-state">Loading...</p></div></div>
 
+      </section>
+    </main>
+  </div>
+
+  <!-- ═══════════════ WALLET MODAL ═══════════════ -->
+  <div id="wallet-modal" class="wallet-modal-overlay" style="display:none;">
+    <div class="wallet-modal-glass">
+      <div class="wallet-modal-header">
+        <h3>🔗 <span data-i18n="modal_title">Connect Your Wallet</span></h3>
+        <button class="wallet-modal-close" onclick="window.app.closeWalletModal()">&times;</button>
       </div>
-
-    </section>
-  </main>
+      <p class="wallet-modal-desc" data-i18n="modal_desc">Choose how you want to connect. Your keys, your community.</p>
+      <div class="wallet-options">
+        <button class="wallet-option-card" id="opt-metamask" onclick="window.app.connectMetaMask()">
+          <div class="wallet-opt-icon">🦊</div>
+          <div class="wallet-opt-info">
+            <strong>MetaMask</strong>
+            <span data-i18n="opt_metamask_desc">Browser Extension</span>
+          </div>
+          <div class="wallet-opt-arrow">→</div>
+        </button>
+        <button class="wallet-option-card" id="opt-walletconnect" onclick="window.app.connectWalletConnect()">
+          <div class="wallet-opt-icon">📱</div>
+          <div class="wallet-opt-info">
+            <strong>WalletConnect</strong>
+            <span data-i18n="opt_wc_desc">Mobile Wallet via QR Code</span>
+          </div>
+          <div class="wallet-opt-arrow">→</div>
+        </button>
+        <button class="wallet-option-card" id="opt-coinbase" onclick="window.app.connectCoinbase()">
+          <div class="wallet-opt-icon">🔵</div>
+          <div class="wallet-opt-info">
+            <strong>Coinbase Wallet</strong>
+            <span data-i18n="opt_cb_desc">Coinbase Extension or Mobile</span>
+          </div>
+          <div class="wallet-opt-arrow">→</div>
+        </button>
+      </div>
+      <div class="wallet-modal-footer">
+        <span data-i18n="modal_footer">All connections are gasless for governance. Your keys never leave your device.</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Toasts -->
   <div id="notifications" class="toast-stack"></div>
 
-  <!-- Import map for Three.js -->
   <script type="importmap">
     {
       "imports": {
@@ -201,6 +229,7 @@
   </script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+  <script src="https://unpkg.com/@coinbase/wallet-sdk@4.0.3/dist/index.js" defer></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

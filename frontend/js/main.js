@@ -1,6 +1,24 @@
-import { API_URL, CONTRACT_ADDRESSES, ABIS } from './config.js';
+import { API_URL, CONTRACT_ADDRESSES, ABIS, RSK_TESTNET, WALLETCONNECT_PROJECT_ID } from './config.js';
 import { initThreeJS, triggerActionEffect } from './three-scene.js';
+import { initRouter, navigateTo, renderSidebar } from './router.js';
+import { initChat } from './modules/chat.js';
+import { initRules } from './modules/rules.js';
+import { initFinances } from './modules/finances.js';
+import { initFood } from './modules/food.js';
+import { initSolar } from './modules/solar.js';
+import { initWater } from './modules/water.js';
+import { initSecurity } from './modules/security.js';
+import { initAnnouncements } from './modules/announcements.js';
+import { initMarketplace } from './modules/marketplace.js';
 const ethers = window.ethers;
+
+const moduleLoaded = {};
+async function loadModule(id) {
+  if (moduleLoaded[id]) return;
+  moduleLoaded[id] = true;
+  const loaders = { chat: initChat, rules: initRules, finances: initFinances, food: initFood, solar: initSolar, water: initWater, security: initSecurity, announcements: initAnnouncements, marketplace: initMarketplace };
+  if (loaders[id]) await loaders[id]();
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  I18N (INTERNATIONALIZATION)
@@ -28,8 +46,9 @@ const i18n = {
     empty_admin: "No ideas.",
     btn_promote: "Promote →",
     // Notifications
-    err_metamask: "MetaMask not found!",
-    msg_sign: "Sign message in MetaMask (free)...",
+    err_no_wallet: "No wallet detected! Install MetaMask or use WalletConnect.",
+    err_metamask: "MetaMask not found! Install the extension or use WalletConnect.",
+    msg_sign: "Sign message in your wallet (free)...",
     msg_check_nft: "Verifying your NFTs...",
     msg_connected: "Connected! All actions are free.",
     msg_disconnect: "Disconnected.",
@@ -47,7 +66,16 @@ const i18n = {
     msg_acct_change: "Account changed — reconnecting.",
     promoting: "Promoting...",
     btn_revoke: "↺ Revoke & Refund",
-    msg_revoke_ok: "Vote revoked. Credits refunded:"
+    msg_revoke_ok: "Vote revoked. Credits refunded:",
+    msg_guest_enter: "Welcome! You have a Demo NFT with 50 credits to test features.",
+    msg_guest_action: "This is a demo action — it won't be saved.",
+    btn_upgrade: "Connect Wallet",
+    guest_nft_label: "Demo NFT",
+    msg_wc_connecting: "Opening WalletConnect... Scan the QR code with your mobile wallet.",
+    msg_cb_connecting: "Connecting via Coinbase Wallet...",
+    err_wc_fail: "WalletConnect connection failed. Try again.",
+    err_cb_fail: "Coinbase Wallet connection failed. Try again.",
+    err_wc_not_loaded: "WalletConnect SDK not loaded yet. Please wait a moment and try again."
   },
   es: {
     // Dynamic JS Text
@@ -70,8 +98,9 @@ const i18n = {
     empty_admin: "Sin ideas.",
     btn_promote: "Promover →",
     // Notifications
-    err_metamask: "¡MetaMask no encontrado!",
-    msg_sign: "Firma el mensaje en MetaMask (gratis)...",
+    err_no_wallet: "¡No se detectó ninguna billetera! Instala MetaMask o usa WalletConnect.",
+    err_metamask: "¡MetaMask no encontrado! Instala la extensión o usa WalletConnect.",
+    msg_sign: "Firma el mensaje en tu billetera (gratis)...",
     msg_check_nft: "Verificando tus NFTs...",
     msg_connected: "¡Conectado! Todas las acciones son gratis.",
     msg_disconnect: "Desconectado.",
@@ -89,7 +118,16 @@ const i18n = {
     msg_acct_change: "Cuenta cambiada — reconectando.",
     promoting: "Promoviendo...",
     btn_revoke: "↺ Revocar y Reembolsar",
-    msg_revoke_ok: "Voto revocado. Créditos devueltos:"
+    msg_revoke_ok: "Voto revocado. Créditos devueltos:",
+    msg_guest_enter: "¡Bienvenido! Tienes un NFT de prueba con 50 créditos para probar.",
+    msg_guest_action: "Esta es una acción de demostración — no se guardará.",
+    btn_upgrade: "Conectar Billetera",
+    guest_nft_label: "NFT de Prueba",
+    msg_wc_connecting: "Abriendo WalletConnect... Escanea el código QR con tu billetera móvil.",
+    msg_cb_connecting: "Conectando vía Coinbase Wallet...",
+    err_wc_fail: "Conexión WalletConnect fallida. Inténtalo de nuevo.",
+    err_cb_fail: "Conexión Coinbase Wallet fallida. Inténtalo de nuevo.",
+    err_wc_not_loaded: "WalletConnect SDK aún no cargado. Espera un momento e inténtalo de nuevo."
   }
 };
 
@@ -107,7 +145,7 @@ function updateStaticTranslations() {
     const staticDict = {
       en: {
         nav_governance: "Governance", btn_connect: "Connect",
-        hero_title_1: "Community<br><span>Governance</span>", hero_desc: "Connect your wallet to participate in the decisions that shape our community.", btn_connect_wallet: "Connect MetaMask",
+        hero_title_1: "Community<br><span>Governance</span>", hero_desc: "Connect your wallet to access the full community platform, or browse as a guest with a demo NFT.", btn_connect_wallet: "Connect Wallet", btn_connect: "Connect Wallet", btn_guest: "Browse as Guest (Demo NFT)",
         feat_1_title: "Suggest", feat_1_desc: "Propose ideas", feat_2_title: "Vote", feat_2_desc: "Quadratic Voting",
         feat_3_title: "Debate", feat_3_desc: "Gas-free", feat_4_title: "Results", feat_4_desc: "Transparent",
         admin_panel: "Admin Panel", admin_mint_lbl: "Mint Member NFT", btn_mint: "Mint",
@@ -122,7 +160,7 @@ function updateStaticTranslations() {
       },
       es: {
         nav_governance: "Gobernanza", btn_connect: "Conectar",
-        hero_title_1: "Gobernanza<br><span>Comunitaria</span>", hero_desc: "Conecta tu billetera para participar en las decisiones que moldean nuestra comunidad.", btn_connect_wallet: "Conectar MetaMask",
+        hero_title_1: "Gobernanza<br><span>Comunitaria</span>", hero_desc: "Conecta tu billetera para acceder a la plataforma comunitaria, o navega como invitado con un NFT de prueba.", btn_connect_wallet: "Conectar Billetera", btn_connect: "Conectar Billetera", btn_guest: "Navegar como Invitado (NFT Demo)",
         feat_1_title: "Sugerir", feat_1_desc: "Proponer ideas", feat_2_title: "Votar", feat_2_desc: "Quadratic Voting",
         feat_3_title: "Debatir", feat_3_desc: "Sin costo", feat_4_title: "Resultados", feat_4_desc: "Transparente",
         admin_panel: "Panel Admin", admin_mint_lbl: "Emitir NFT de Miembro", btn_mint: "Emitir",
@@ -156,6 +194,8 @@ function updateStaticTranslations() {
 
 let userAddress = null;
 let authToken = null;
+let guestMode = false;
+let activeProvider = null; // The EIP-1193 provider (MetaMask, WalletConnect, etc.)
 
 const state = {
   myNFTs: [],
@@ -204,16 +244,22 @@ function renderMyNFTs() {
     return;
   }
 
-  list.innerHTML = state.myNFTs.map(nft => `
-    <div class="nft-chip">
-      <h4>NFT #${nft.id}</h4>
+  list.innerHTML = state.myNFTs.map(nft => {
+    const isDemo = nft.id === 0 && guestMode;
+    const chipClass = isDemo ? 'nft-chip demo-nft' : 'nft-chip';
+    const label = isDemo ? `🎭 ${t('guest_nft_label')}` : `NFT #${nft.id}`;
+    return `
+    <div class="${chipClass}">
+      <h4>${label}</h4>
       <div class="credits">🪙 ${nft.credits} ${t('credits')}</div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
-  select.innerHTML = state.myNFTs.map(nft =>
-    `<option value="${nft.id}">NFT #${nft.id} (${nft.credits} cr)</option>`
-  ).join('');
+  select.innerHTML = state.myNFTs.map(nft => {
+    const label = (nft.id === 0 && guestMode) ? `🎭 ${t('guest_nft_label')} (${nft.credits} cr)` : `NFT #${nft.id} (${nft.credits} cr)`;
+    return `<option value="${nft.id}">${label}</option>`;
+  }).join('');
 }
 
 function renderIdeaList() {
@@ -400,70 +446,222 @@ function refreshUI() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  WALLET MODAL
+// ═══════════════════════════════════════════════════════════════
+
+function showWalletModal() {
+  document.getElementById('wallet-modal').style.display = 'flex';
+}
+
+function closeWalletModal() {
+  document.getElementById('wallet-modal').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  WALLET & AUTH
 // ═══════════════════════════════════════════════════════════════
 
-async function connectWallet() {
+async function ensureRskTestnet(prov) {
+  const p = prov || activeProvider || window.ethereum;
+  if (!p) return;
+  try {
+    await p.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: RSK_TESTNET.chainId }]
+    });
+  } catch (switchError) {
+    // 4902 = chain not added yet
+    if (switchError.code === 4902) {
+      await p.request({
+        method: 'wallet_addEthereumChain',
+        params: [RSK_TESTNET]
+      });
+    } else {
+      throw switchError;
+    }
+  }
+}
+
+// ── Shared handler after any wallet connects ──
+async function onWalletConnected(prov, address) {
+  activeProvider = prov;
+  closeWalletModal();
+
+  const message = `Veritas Villages Login\nTimestamp: ${Date.now()}`;
+  const providerEthers = new ethers.BrowserProvider(prov);
+  const signer = await providerEthers.getSigner();
+
+  notify(t('msg_sign'), 'info');
+  const signature = await signer.signMessage(message);
+
+  notify(t('msg_check_nft'), 'info');
+  const authData = await api('/auth', {
+    method: 'POST',
+    body: JSON.stringify({ address, signature, message })
+  });
+
+  guestMode = false;
+  authToken = authData.token;
+  userAddress = authData.address;
+  state.isAdmin = authData.isAdmin;
+  state.myNFTs = authData.nftIds.map(id => ({ id, credits: authData.credits[id] }));
+  state.myIdeaVotes = authData.ideaVotes || [];
+  state.myPropVotes = authData.proposalVotes || [];
+
+  showDashboard();
+  notify(t('msg_connected'), 'success');
+  await syncData();
+}
+
+function showDashboard() {
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('app-sidebar').style.display = 'flex';
+  document.getElementById('btn-connect-wallet').style.display = 'none';
+  const btnDisc = document.getElementById('btn-disconnect-wallet');
+  btnDisc.style.display = 'inline-flex';
+
+  if (guestMode) {
+    document.getElementById('wallet-label').textContent = '🎭 Guest';
+  } else {
+    document.getElementById('wallet-label').textContent = userAddress.substring(0, 6) + '...' + userAddress.slice(-4);
+  }
+  document.getElementById('user-address').textContent = userAddress || 'guest';
+  document.getElementById('my-nfts-section').style.display = 'block';
+  document.getElementById('admin-panel').style.display = state.isAdmin ? 'block' : 'none';
+
+  renderSidebar(currentLang);
+  navigateTo('governance');
+  refreshUI();
+}
+
+// ── MetaMask (injected window.ethereum) ──
+async function connectMetaMask() {
+  closeWalletModal();
   if (!window.ethereum) return notify(t('err_metamask'), 'error');
   try {
+    await ensureRskTestnet(window.ethereum);
     await window.ethereum.request({
       method: 'wallet_requestPermissions',
       params: [{ eth_accounts: {} }]
     });
-
     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-    const address = accounts[0];
-
-    const message = `Veritas Villages Login\nTimestamp: ${Date.now()}`;
-    const providerEthers = new ethers.BrowserProvider(window.ethereum);
-    const signer = await providerEthers.getSigner();
-
-    notify(t('msg_sign'), 'info');
-    const signature = await signer.signMessage(message);
-
-    notify(t('msg_check_nft'), 'info');
-    const authData = await api('/auth', {
-      method: 'POST',
-      body: JSON.stringify({ address, signature, message })
-    });
-
-    authToken = authData.token;
-    userAddress = authData.address;
-    state.isAdmin = authData.isAdmin;
-    state.myNFTs = authData.nftIds.map(id => ({ id, credits: authData.credits[id] }));
-    state.myIdeaVotes = authData.ideaVotes || [];
-    state.myPropVotes = authData.proposalVotes || [];
-
-    document.getElementById('welcome-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    document.getElementById('btn-connect-wallet').style.display = 'none';
-    const btnDisc = document.getElementById('btn-disconnect-wallet');
-    btnDisc.style.display = 'inline-flex';
-    document.getElementById('wallet-label').textContent = userAddress.substring(0, 6) + '...' + userAddress.slice(-4);
-    document.getElementById('user-address').textContent = userAddress;
-    document.getElementById('my-nfts-section').style.display = 'block';
-    document.getElementById('admin-panel').style.display = state.isAdmin ? 'block' : 'none';
-
-    refreshUI();
-    notify(t('msg_connected'), 'success');
-    await syncData();
-
+    await onWalletConnected(window.ethereum, accounts[0]);
   } catch (err) {
     console.error(err);
     if (err.code !== 4001) notify('Error: ' + (err.message || ''), 'error');
   }
 }
 
+// ── WalletConnect v2 (QR Code for mobile wallets) ──
+async function connectWalletConnect() {
+  closeWalletModal();
+
+  let WCProvider;
+  try {
+    notify('Loading WalletConnect...', 'info');
+    // Dynamically load the ESM bundle instead of relying on UMD global variables
+    const mod = await import('https://esm.sh/@walletconnect/ethereum-provider@2.11.2');
+    WCProvider = mod.EthereumProvider;
+  } catch (e) {
+    console.error('Failed to load WalletConnect SDK:', e);
+    notify(t('err_wc_not_loaded'), 'error');
+    return;
+  }
+
+  try {
+    notify(t('msg_wc_connecting'), 'info');
+
+    const wcProvider = await WCProvider.init({
+      projectId: WALLETCONNECT_PROJECT_ID,
+      chains: [31], // RSK Testnet
+      showQrModal: true,
+      rpcMap: {
+        31: 'https://public-node.testnet.rsk.co'
+      },
+      metadata: {
+        name: 'Veritas Villages',
+        description: 'Community Governance Platform',
+        url: window.location.origin,
+        icons: [window.location.origin + '/assets/logo.png']
+      }
+    });
+
+    await wcProvider.enable();
+    const accounts = wcProvider.accounts;
+    if (accounts && accounts.length > 0) {
+      await onWalletConnected(wcProvider, accounts[0]);
+    }
+  } catch (err) {
+    console.error('WalletConnect error:', err);
+    if (err.message && !err.message.includes('User rejected')) {
+      notify(t('err_wc_fail'), 'error');
+    }
+  }
+}
+
+// ── Coinbase Wallet ──
+async function connectCoinbase() {
+  closeWalletModal();
+
+  // Check for Coinbase Wallet extension (injected)
+  const cbProvider = window.coinbaseWalletExtension || (window.ethereum?.isCoinbaseWallet ? window.ethereum : null);
+
+  if (cbProvider) {
+    try {
+      notify(t('msg_cb_connecting'), 'info');
+      await ensureRskTestnet(cbProvider);
+      const accounts = await cbProvider.request({ method: 'eth_requestAccounts' });
+      await onWalletConnected(cbProvider, accounts[0]);
+    } catch (err) {
+      console.error('Coinbase error:', err);
+      if (err.code !== 4001) notify(t('err_cb_fail'), 'error');
+    }
+  } else if (window.CoinbaseWalletSDK) {
+    // Use SDK fallback
+    try {
+      notify(t('msg_cb_connecting'), 'info');
+      const sdk = new window.CoinbaseWalletSDK({
+        appName: 'Veritas Villages',
+        appLogoUrl: window.location.origin + '/assets/logo.png'
+      });
+      const provider = sdk.makeWeb3Provider('https://public-node.testnet.rsk.co', 31);
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
+      await onWalletConnected(provider, accounts[0]);
+    } catch (err) {
+      console.error('Coinbase SDK error:', err);
+      if (err.code !== 4001) notify(t('err_cb_fail'), 'error');
+    }
+  } else {
+    notify(t('err_cb_fail') + ' Install the Coinbase Wallet extension.', 'warning');
+  }
+}
+
+// ── Open wallet modal (called by Connect button) ──
+function connectWallet() {
+  showWalletModal();
+}
+
 function disconnectWallet() {
+  // Clean up WalletConnect session if active
+  if (activeProvider && activeProvider.disconnect) {
+    try { activeProvider.disconnect(); } catch (e) {}
+  }
+
   userAddress = null;
   authToken = null;
+  guestMode = false;
+  activeProvider = null;
   state.isAdmin = false;
   state.myNFTs = [];
   state.ideas = [];
   state.proposals = [];
+  state.myIdeaVotes = [];
+  state.myPropVotes = [];
 
   document.getElementById('welcome-screen').style.display = '';
   document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('app-sidebar').style.display = 'none';
   document.getElementById('btn-connect-wallet').style.display = '';
   document.getElementById('btn-disconnect-wallet').style.display = 'none';
   document.getElementById('my-nfts-section').style.display = 'none';
@@ -479,6 +677,15 @@ function disconnectWallet() {
 
 async function syncData() {
   try {
+    // In guest mode, only load public data (ideas and proposals)
+    if (guestMode) {
+      const ideasData = await api('/ideas');
+      state.ideas = ideasData.ideas;
+      state.nextBatchTime = ideasData.nextBatchTime;
+      state.proposals = await api('/proposals');
+      refreshUI();
+      return;
+    }
     if (authToken) {
       const userData = await api('/auth/refresh');
       state.myNFTs = userData.nftIds.map(id => ({ id, credits: userData.credits[id] }));
@@ -507,14 +714,49 @@ window.app = {
     currentLang = lang;
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`btn-lang-${lang}`).classList.add('active');
+    renderSidebar(lang);
     refreshUI();
   },
 
+  enterAsGuest: () => {
+    // Set up guest mode with demo NFT
+    guestMode = true;
+    authToken = null;
+    userAddress = '0x0000000000000000000000000000000guest';
+    state.isAdmin = false;
+    state.myNFTs = [{ id: 0, credits: 50 }];
+    state.myIdeaVotes = [];
+    state.myPropVotes = [];
+
+    showDashboard();
+    notify(t('msg_guest_enter'), 'success');
+    // Load public data (ideas, proposals)
+    syncData();
+  },
+
+  // Wallet modal controls
+  closeWalletModal: () => closeWalletModal(),
+  connectMetaMask: () => connectMetaMask(),
+  connectWalletConnect: () => connectWalletConnect(),
+  connectCoinbase: () => connectCoinbase(),
+
   voteIdea: async (ideaId) => {
-    if (!authToken) return notify(t('err_connect'), 'warning');
-    const nftId = parseInt(document.getElementById(`vote-idea-nft-${ideaId}`).value);
-    if (!nftId) return notify(t('err_select_nft'), 'error');
+    if (!authToken && !guestMode) return notify(t('err_connect'), 'warning');
+    const nftEl = document.getElementById(`vote-idea-nft-${ideaId}`);
+    const nftId = nftEl ? parseInt(nftEl.value) : 0;
     const additionalVotes = parseInt(document.getElementById(`qv-idea-${ideaId}`).value) || 1;
+
+    // Guest mode: simulate vote locally
+    if (guestMode) {
+      const cost = additionalVotes * additionalVotes;
+      if (state.myNFTs[0]) state.myNFTs[0].credits = Math.max(0, state.myNFTs[0].credits - cost);
+      notify(`${t('msg_guest_action')} ${t('msg_vote_ok')} ${cost} cr`, 'info');
+      triggerActionEffect('vote');
+      renderMyNFTs();
+      return;
+    }
+
+    if (!nftId) return notify(t('err_select_nft'), 'error');
 
     try {
       const result = await api(`/ideas/${ideaId}/vote`, {
@@ -528,7 +770,8 @@ window.app = {
   },
 
   revokeIdeaVote: async (ideaId, nftId) => {
-    if (!authToken) return;
+    if (!authToken && !guestMode) return;
+    if (guestMode) { notify(t('msg_guest_action'), 'info'); return; }
     try {
       const result = await api(`/ideas/${ideaId}/vote`, {
         method: 'DELETE',
@@ -540,10 +783,16 @@ window.app = {
   },
 
   addComment: async (ideaId) => {
-    if (!authToken) return notify(t('err_connect'), 'warning');
+    if (!authToken && !guestMode) return notify(t('err_connect'), 'warning');
     const input = document.getElementById(`comment-input-${ideaId}`);
     const text = input.value.trim();
     if (!text) return;
+
+    if (guestMode) {
+      notify(t('msg_guest_action'), 'info');
+      input.value = '';
+      return;
+    }
 
     try {
       await api(`/ideas/${ideaId}/comment`, {
@@ -556,7 +805,18 @@ window.app = {
   },
 
   voteProposal: async (propId, choice) => {
-    if (!authToken) return notify(t('err_connect'), 'warning');
+    if (!authToken && !guestMode) return notify(t('err_connect'), 'warning');
+    
+    if (guestMode) {
+      const additionalVotes = parseInt(document.getElementById(`qv-prop-${propId}`)?.value) || 1;
+      const cost = additionalVotes * additionalVotes;
+      if (state.myNFTs[0]) state.myNFTs[0].credits = Math.max(0, state.myNFTs[0].credits - cost);
+      notify(`${t('msg_guest_action')} ${t('msg_vote_ok')} ${cost} cr`, 'info');
+      triggerActionEffect('vote');
+      renderMyNFTs();
+      return;
+    }
+
     const nftId = parseInt(document.getElementById(`vote-prop-nft-${propId}`).value);
     if (!nftId) return notify(t('err_select_nft'), 'error');
     const additionalVotes = parseInt(document.getElementById(`qv-prop-${propId}`).value) || 1;
@@ -573,7 +833,8 @@ window.app = {
   },
 
   revokePropVote: async (propId, nftId) => {
-    if (!authToken) return;
+    if (!authToken && !guestMode) return;
+    if (guestMode) { notify(t('msg_guest_action'), 'info'); return; }
     try {
       const result = await api(`/proposals/${propId}/vote`, {
         method: 'DELETE',
@@ -602,24 +863,35 @@ window.app = {
 // ═══════════════════════════════════════════════════════════════
 
 function init() {
-  // Init ThreeJS background
   initThreeJS();
-
-  // Init static UI language
   updateStaticTranslations();
+  renderSidebar(currentLang);
+
+  // Init router
+  initRouter(async (routeId) => {
+    await loadModule(routeId);
+  });
 
   document.getElementById('btn-connect-wallet').onclick = connectWallet;
   document.getElementById('btn-disconnect-wallet').onclick = disconnectWallet;
 
   // Submit idea
   document.getElementById('btn-submit-idea').onclick = async () => {
-    if (!authToken) return notify(t('err_connect'), 'warning');
+    if (!authToken && !guestMode) return notify(t('err_connect'), 'warning');
     const nftId = parseInt(document.getElementById('idea-nft-select').value);
-    if (!nftId) return notify(t('err_select_nft'), 'warning');
 
     const title = document.getElementById('idea-title').value;
     const desc = document.getElementById('idea-desc').value;
     if (!title || !desc) return notify(t('err_fill_idea'), 'warning');
+
+    if (guestMode) {
+      notify(t('msg_guest_action'), 'info');
+      document.getElementById('idea-title').value = '';
+      document.getElementById('idea-desc').value = '';
+      return;
+    }
+
+    if (!nftId) return notify(t('err_select_nft'), 'warning');
 
     try {
       await api('/ideas', {
@@ -633,7 +905,7 @@ function init() {
     } catch (e) { notify(e.message, 'error'); }
   };
 
-  // Admin: Mint NFT (on-chain)
+  // Admin: Mint NFT (on-chain via MetaMask)
   document.getElementById('btn-admin-mint').onclick = async () => {
     if (!state.isAdmin) return notify(t('err_admin_only'), 'error');
     const address = document.getElementById('admin-mint-address').value;
@@ -641,17 +913,26 @@ function init() {
 
     try {
       notify(t('msg_minting'), 'info');
-      const p = new ethers.BrowserProvider(window.ethereum);
+      const prov = activeProvider || window.ethereum;
+      await ensureRskTestnet(prov);
+      const p = new ethers.BrowserProvider(prov);
       const s = await p.getSigner();
       const nft = new ethers.Contract(CONTRACT_ADDRESSES.NFT, ABIS.NFT, s);
-      const tx = await nft.safeMint(address, { gasLimit: 300000 });
+      // RSK doesn't support EIP-1559 — must use legacy gasPrice
+      const feeData = await p.getFeeData();
+      const gasPrice = feeData.gasPrice || ethers.parseUnits('0.06', 'gwei');
+      const tx = await nft.safeMint(address, {
+        gasLimit: 300000,
+        gasPrice,
+        type: 0
+      });
       await tx.wait();
       notify(t('msg_mint_ok'), 'success');
       document.getElementById('admin-mint-address').value = '';
       await syncData();
     } catch (e) {
       console.error(e);
-      notify(`Fail: ${e.reason || 'Error'}`, 'error');
+      notify(`Fail: ${e.reason || e.message || 'Error'}`, 'error');
     }
   };
 
@@ -675,9 +956,10 @@ function init() {
     } catch (e) { notify(e.message, 'error'); }
   };
 
-  // MetaMask account change
+  // MetaMask / injected wallet account change
   if (window.ethereum) {
     window.ethereum.on('accountsChanged', (accounts) => {
+      if (guestMode) return; // Ignore in guest mode
       if (accounts.length > 0 && userAddress && accounts[0].toLowerCase() !== userAddress.toLowerCase()) {
         notify(t('msg_acct_change'), 'info');
         disconnectWallet();
@@ -687,9 +969,14 @@ function init() {
     });
   }
 
+  // Close wallet modal on overlay click
+  document.getElementById('wallet-modal').addEventListener('click', (e) => {
+    if (e.target.classList.contains('wallet-modal-overlay')) closeWalletModal();
+  });
+
   // Auto-refresh
   setInterval(async () => {
-    if (authToken) await syncData();
+    if (authToken || guestMode) await syncData();
   }, 10000);
 
   // Global batch timer tick

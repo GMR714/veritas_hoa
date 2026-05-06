@@ -7,6 +7,14 @@ export const CONTRACT_ADDRESSES = {
   GOVERNANCE: "0x0dD18e9cc000245C3442c181206de42762f6A537"
 };
 
+export const RSK_TESTNET = {
+  chainId: '0x1f', // 31 in hex
+  chainName: 'RSK Testnet',
+  nativeCurrency: { name: 'tRBTC', symbol: 'tRBTC', decimals: 18 },
+  rpcUrls: ['https://public-node.testnet.rsk.co'],
+  blockExplorerUrls: ['https://explorer.testnet.rootstock.io']
+};
+
 export const ABIS = {
   NFT: [
     "function owner() view returns (address)",
@@ -31,3 +39,7 @@ export const ABIS = {
     "function proposals(uint256) view returns (uint256 id, string title, string description, uint256 votesFor, uint256 votesAgainst, uint256 votesAbstain, uint256 startTime, uint256 endTime, bool executed, bool exists)"
   ]
 };
+
+// WalletConnect Project ID — get yours free at https://cloud.walletconnect.com
+// Replace this placeholder with your own project ID
+export const WALLETCONNECT_PROJECT_ID = '9e0090f19152d5f7c789cbe27db7b2a2';

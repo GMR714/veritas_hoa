@@ -1,4 +1,5 @@
 /* Veritas Villages — Premium Governance UI */
+@import url('./modules.css');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
 
 :root {
@@ -187,6 +188,37 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 /* ═══ EMPTY STATE ═══ */
 .empty-state{color:var(--text-m);font-size:.85rem;text-align:center;padding:30px 0}
 
+/* ═══ WALLET MODAL ═══ */
+.wallet-modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;animation:modalFadeIn .25s var(--ease)}
+@keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
+.wallet-modal-glass{max-width:440px;width:90%;background:rgba(14,34,41,.92);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-lg);padding:32px;position:relative;animation:modalSlideUp .3s var(--ease);box-shadow:0 24px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06)}
+@keyframes modalSlideUp{from{opacity:0;transform:translateY(24px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.wallet-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.wallet-modal-header h3{font-family:'Playfair Display',serif;font-size:1.15rem;color:#fff;display:flex;align-items:center;gap:8px}
+.wallet-modal-close{background:none;border:none;color:var(--text-m);font-size:1.5rem;cursor:pointer;padding:4px 8px;line-height:1;transition:color .2s,transform .2s}
+.wallet-modal-close:hover{color:#fff;transform:scale(1.15)}
+.wallet-modal-desc{font-size:.82rem;color:var(--text-d);margin-bottom:20px;line-height:1.5}
+.wallet-options{display:flex;flex-direction:column;gap:10px}
+.wallet-option-card{display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;border:1px solid var(--border);border-radius:var(--r);background:rgba(255,255,255,.03);cursor:pointer;transition:all .25s var(--ease);font-family:inherit;color:var(--text);text-align:left}
+.wallet-option-card:hover{border-color:var(--teal);background:rgba(27,107,125,.1);transform:translateX(4px);box-shadow:0 4px 20px rgba(27,107,125,.15)}
+.wallet-option-card:active{transform:translateX(2px) scale(0.99)}
+.wallet-opt-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;background:linear-gradient(135deg,rgba(27,107,125,.2),rgba(45,90,61,.15));flex-shrink:0}
+.wallet-opt-info{flex:1;min-width:0}
+.wallet-opt-info strong{display:block;font-size:.92rem;color:#fff;font-weight:700;margin-bottom:2px}
+.wallet-opt-info span{font-size:.72rem;color:var(--text-m)}
+.wallet-opt-arrow{font-size:1.1rem;color:var(--text-m);transition:color .2s,transform .2s}
+.wallet-option-card:hover .wallet-opt-arrow{color:var(--teal-l);transform:translateX(3px)}
+.wallet-modal-footer{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:.7rem;color:var(--text-m);line-height:1.5}
+
+/* Guest NFT Badge */
+.nft-chip.demo-nft{background:linear-gradient(135deg,rgba(245,158,11,.25),rgba(239,68,68,.15));border:1px dashed rgba(245,158,11,.4);position:relative}
+.nft-chip.demo-nft::before{content:'🎭 DEMO';position:absolute;top:-8px;right:-4px;font-size:.55rem;background:var(--gold);color:#000;padding:2px 6px;border-radius:4px;font-weight:800;letter-spacing:.5px}
+.guest-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.2);font-size:.7rem;font-weight:700;color:var(--gold)}
+.guest-banner{margin:16px 20px;padding:12px 18px;border-radius:var(--r-sm);background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(239,68,68,.05));border:1px solid rgba(245,158,11,.15);display:flex;align-items:center;gap:12px;font-size:.82rem;color:var(--text-d)}
+.guest-banner strong{color:var(--gold)}
+.guest-banner .btn-sm{margin-left:auto;flex-shrink:0}
+
 /* ═══ RESPONSIVE ═══ */
 @media(min-width:600px){.admin-grid{grid-template-columns:1fr 1fr}.welcome-glass{padding:56px 48px 44px}}
 @media(max-width:480px){.header-titles h1{font-size:1rem}.header-tag{display:none}.logo-mark{width:34px;height:34px}.btn-glow{padding:8px 14px;font-size:.8rem}.welcome-glass{padding:32px 20px 28px}.welcome-glass h2{font-size:1.5rem}.welcome-features{grid-template-columns:1fr}.feed-section{padding:12px 14px}.idea-top{padding:14px}.form-row{flex-direction:column}.form-row .select-styled{width:100%}}
+
