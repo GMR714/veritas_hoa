@@ -9,7 +9,7 @@ const { seedAll } = require('./mock-data');
 // Seed mock data on startup
 seedAll();
 
-const PORT = 3001;
+const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'veritas-mvp-secret-2024';
 const RPC_URL = process.env.RPC_URL || 'https://public-node.testnet.rsk.co';
 const NFT_ADDRESS = process.env.NFT_ADDRESS || '0xa1851Eb7B8aC7a684ef22EC3b3766A7583d62A80';
@@ -456,7 +456,7 @@ async function startServer() {
     console.warn('⚠️  Could not fetch admin on-chain');
     adminAddress = (process.env.ADMIN_ADDRESS || '').toLowerCase();
   }
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Veritas Community Platform running on http://localhost:${PORT}`);
     console.log(`📡 Modules: Governance, Chat, Rules, Finances, Food, Solar, Water, Security, Announcements, Marketplace\n`);
   });
