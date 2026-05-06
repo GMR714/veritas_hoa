@@ -863,7 +863,7 @@ window.app = {
 // ═══════════════════════════════════════════════════════════════
 
 function init() {
-  initThreeJS();
+  try { initThreeJS(); } catch (e) { console.warn('3D background unavailable:', e); }
   updateStaticTranslations();
   renderSidebar(currentLang);
 
