@@ -3,11 +3,15 @@
 #app-sidebar{width:220px;flex-shrink:0;background:rgba(10,26,31,.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:58px;left:0;height:calc(100dvh - 58px);overflow-y:auto;z-index:50;transition:transform .3s var(--ease)}
 #app-main{margin-left:220px;width:calc(100% - 220px)}
 #sidebar-nav{padding:12px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
-.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:none;border-radius:var(--r-sm);background:transparent;color:var(--text-d);font-family:inherit;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s var(--ease);text-align:left}
+.nav-item{display:flex;align-items:center;gap:12px;width:100%;padding:14px 14px;border:none;border-radius:var(--r-sm);background:transparent;color:var(--text-d);font-family:inherit;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .2s var(--ease);text-align:left;min-height:54px}
 .nav-item:hover{background:rgba(255,255,255,.06);color:var(--text);transform:translateX(2px)}
-.nav-item.active{background:linear-gradient(135deg,rgba(27,107,125,.3),rgba(45,90,61,.2));color:#fff;font-weight:600;border:1px solid rgba(27,107,125,.3);box-shadow:0 2px 12px rgba(27,107,125,.15)}
-.nav-icon{font-size:1.1rem;width:24px;text-align:center;flex-shrink:0}
-.nav-label{white-space:nowrap}
+.nav-item:focus-visible{outline:2px solid var(--teal-l);outline-offset:2px}
+.nav-item.active{background:linear-gradient(135deg,rgba(27,107,125,.32),rgba(45,90,61,.2));color:#fff;font-weight:600;border:1px solid rgba(27,107,125,.35);box-shadow:0 2px 14px rgba(27,107,125,.18)}
+.nav-icon{font-size:1.25rem;width:28px;text-align:center;flex-shrink:0}
+.nav-text{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.nav-label{white-space:nowrap;font-size:.88rem}
+.nav-sublabel{font-size:.66rem;color:var(--text-m);font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-item.active .nav-sublabel{color:rgba(232,240,236,.65)}
 .sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);text-align:center}
 .sidebar-version{font-size:.65rem;color:var(--text-m)}
 .btn-hamburger{display:none;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;padding:4px 8px}

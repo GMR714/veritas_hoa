@@ -65,28 +65,57 @@
           <div class="welcome-hero">
             <div class="hero-glow"></div>
             <div class="hero-icon">🌿</div>
-            <h2 data-i18n="hero_title_1">Community<br><span data-i18n="hero_title_2">Platform</span></h2>
-            <p data-i18n="hero_desc">Connect your wallet to access the full community platform, or browse as a guest with a demo NFT.</p>
+            <h2 data-i18n="hero_title_1">Welcome to your<br><span data-i18n="hero_title_2">Community</span></h2>
+            <p data-i18n="hero_desc">Vote, chat, manage finances and stay connected with your neighbors — all in one simple place.</p>
             <button class="btn-hero" onclick="document.getElementById('btn-connect-wallet').click()">
               <span class="btn-hero-icon">🔗</span>
               <span data-i18n="btn_connect_wallet">Connect Wallet</span>
             </button>
-            <button class="btn-hero btn-hero-guest" onclick="window.app.enterAsGuest()" style="margin-top:12px; background:rgba(255,255,255,0.08); box-shadow:none; border:1px solid rgba(255,255,255,0.15);">
+            <button class="btn-hero btn-hero-guest" onclick="window.app.enterAsGuest()">
               <span class="btn-hero-icon">🎭</span>
-              <span data-i18n="btn_guest">Browse as Guest (Demo NFT)</span>
+              <span data-i18n="btn_guest">Try as Guest (no signup)</span>
             </button>
           </div>
+
+          <div class="welcome-steps" data-i18n-aria="aria_how_it_works" aria-label="How it works">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-text">
+                <strong data-i18n="step_1_title">Sign in</strong>
+                <span data-i18n="step_1_desc">Connect your wallet or try as a guest</span>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-text">
+                <strong data-i18n="step_2_title">Explore</strong>
+                <span data-i18n="step_2_desc">Chat, see finances, browse the marketplace</span>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-text">
+                <strong data-i18n="step_3_title">Take part</strong>
+                <span data-i18n="step_3_desc">Suggest ideas and vote on what matters</span>
+              </div>
+            </div>
+          </div>
+
           <div class="welcome-features">
-            <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-text"><strong>Chat</strong><span>Real-time</span></div></div>
-            <div class="feat-card"><div class="feat-icon">🗳️</div><div class="feat-text"><strong>Vote</strong><span>Quadratic</span></div></div>
-            <div class="feat-card"><div class="feat-icon">💰</div><div class="feat-text"><strong>Finances</strong><span>Transparent</span></div></div>
-            <div class="feat-card"><div class="feat-icon">🛒</div><div class="feat-text"><strong>Market</strong><span>Buy & Sell</span></div></div>
+            <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-text"><strong data-i18n="feat_chat">Chat</strong><span data-i18n="feat_chat_d">Talk with neighbors</span></div></div>
+            <div class="feat-card"><div class="feat-icon">🗳️</div><div class="feat-text"><strong data-i18n="feat_vote">Vote</strong><span data-i18n="feat_vote_d">Have a real say</span></div></div>
+            <div class="feat-card"><div class="feat-icon">💰</div><div class="feat-text"><strong data-i18n="feat_fin">Finances</strong><span data-i18n="feat_fin_d">See every expense</span></div></div>
+            <div class="feat-card"><div class="feat-icon">🛒</div><div class="feat-text"><strong data-i18n="feat_mkt">Marketplace</strong><span data-i18n="feat_mkt_d">Buy & sell locally</span></div></div>
           </div>
         </div>
       </section>
 
       <!-- ═══ DASHBOARD (all modules) ═══ -->
       <section id="dashboard" style="display:none;">
+
+        <!-- Sub-tab bar (rendered by router.js) -->
+        <div id="subtab-bar" class="subtab-bar"></div>
+
 
         <!-- MODULE: Governance -->
         <div id="module-governance" class="module-section">

@@ -1,6 +1,6 @@
 import { API_URL, CONTRACT_ADDRESSES, ABIS, RSK_TESTNET, WALLETCONNECT_PROJECT_ID } from './config.js';
 import { initThreeJS, triggerActionEffect } from './three-scene.js';
-import { initRouter, navigateTo, renderSidebar } from './router.js';
+import { initRouter, navigateTo, renderSidebar, renderSubtabs, getCurrentRoute, routes } from './router.js';
 import { initChat } from './modules/chat.js';
 import { initRules } from './modules/rules.js';
 import { initFinances } from './modules/finances.js';
@@ -145,7 +145,14 @@ function updateStaticTranslations() {
     const staticDict = {
       en: {
         nav_governance: "Governance", btn_connect: "Connect",
-        hero_title_1: "Community<br><span>Governance</span>", hero_desc: "Connect your wallet to access the full community platform, or browse as a guest with a demo NFT.", btn_connect_wallet: "Connect Wallet", btn_connect: "Connect Wallet", btn_guest: "Browse as Guest (Demo NFT)",
+        hero_title_1: "Welcome to your<br><span>Community</span>", hero_title_2: "Community", hero_desc: "Vote, chat, manage finances and stay connected with your neighbors — all in one simple place.", btn_connect_wallet: "Connect Wallet", btn_connect: "Connect Wallet", btn_guest: "Try as Guest (no signup)",
+        step_1_title: "Sign in", step_1_desc: "Connect your wallet or try as a guest",
+        step_2_title: "Explore", step_2_desc: "Chat, see finances, browse the marketplace",
+        step_3_title: "Take part", step_3_desc: "Suggest ideas and vote on what matters",
+        feat_chat: "Chat", feat_chat_d: "Talk with neighbors",
+        feat_vote: "Vote", feat_vote_d: "Have a real say",
+        feat_fin: "Finances", feat_fin_d: "See every expense",
+        feat_mkt: "Marketplace", feat_mkt_d: "Buy & sell locally",
         feat_1_title: "Suggest", feat_1_desc: "Propose ideas", feat_2_title: "Vote", feat_2_desc: "Quadratic Voting",
         feat_3_title: "Debate", feat_3_desc: "Gas-free", feat_4_title: "Results", feat_4_desc: "Transparent",
         admin_panel: "Admin Panel", admin_mint_lbl: "Mint Member NFT", btn_mint: "Mint",
@@ -160,7 +167,14 @@ function updateStaticTranslations() {
       },
       es: {
         nav_governance: "Gobernanza", btn_connect: "Conectar",
-        hero_title_1: "Gobernanza<br><span>Comunitaria</span>", hero_desc: "Conecta tu billetera para acceder a la plataforma comunitaria, o navega como invitado con un NFT de prueba.", btn_connect_wallet: "Conectar Billetera", btn_connect: "Conectar Billetera", btn_guest: "Navegar como Invitado (NFT Demo)",
+        hero_title_1: "Bienvenido a tu<br><span>Comunidad</span>", hero_title_2: "Comunidad", hero_desc: "Vota, chatea, gestiona finanzas y mantente conectado con tus vecinos — todo en un solo lugar.", btn_connect_wallet: "Conectar Billetera", btn_connect: "Conectar Billetera", btn_guest: "Probar como Invitado (sin registro)",
+        step_1_title: "Entra", step_1_desc: "Conecta tu billetera o entra como invitado",
+        step_2_title: "Explora", step_2_desc: "Chat, finanzas y mercado de la comunidad",
+        step_3_title: "Participa", step_3_desc: "Sugiere ideas y vota en lo que importa",
+        feat_chat: "Chat", feat_chat_d: "Habla con vecinos",
+        feat_vote: "Votar", feat_vote_d: "Tu voz cuenta",
+        feat_fin: "Finanzas", feat_fin_d: "Cada gasto a la vista",
+        feat_mkt: "Mercado", feat_mkt_d: "Compra y vende",
         feat_1_title: "Sugerir", feat_1_desc: "Proponer ideas", feat_2_title: "Votar", feat_2_desc: "Quadratic Voting",
         feat_3_title: "Debatir", feat_3_desc: "Sin costo", feat_4_title: "Resultados", feat_4_desc: "Transparente",
         admin_panel: "Panel Admin", admin_mint_lbl: "Emitir NFT de Miembro", btn_mint: "Emitir",
@@ -175,6 +189,16 @@ function updateStaticTranslations() {
       }
     };
     if (staticDict[currentLang][key]) el.innerHTML = staticDict[currentLang][key];
+  });
+
+  // Update aria-labels
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const key = el.getAttribute('data-i18n-aria');
+    const ariaDict = {
+      en: { aria_how_it_works: "How it works" },
+      es: { aria_how_it_works: "Cómo funciona" }
+    };
+    if (ariaDict[currentLang][key]) el.setAttribute('aria-label', ariaDict[currentLang][key]);
   });
 
   // Update placeholders
@@ -531,7 +555,10 @@ function showDashboard() {
   document.getElementById('admin-panel').style.display = state.isAdmin ? 'block' : 'none';
 
   renderSidebar(currentLang);
-  navigateTo('governance');
+  // Preserve hash deep-link if valid; otherwise default to governance
+  const hash = window.location.hash.replace('#', '');
+  const target = routes.find(r => r.id === hash) ? hash : 'governance';
+  navigateTo(target);
   refreshUI();
 }
 
@@ -712,6 +739,8 @@ window.app = {
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`btn-lang-${lang}`).classList.add('active');
     renderSidebar(lang);
+    renderSubtabs(lang);
+    updateStaticTranslations();
     refreshUI();
   },
 
