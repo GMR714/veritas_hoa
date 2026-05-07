@@ -617,23 +617,20 @@ async function connectCoinbase() {
       console.error('Coinbase error:', err);
       if (err.code !== 4001) notify(t('err_cb_fail'), 'error');
     }
-  } else if (window.CoinbaseWalletSDK) {
-    // Use SDK fallback
+  } else {
+    // Dynamically load Coinbase Wallet SDK on demand (avoids CJS-in-browser errors on page load)
     try {
       notify(t('msg_cb_connecting'), 'info');
-      const sdk = new window.CoinbaseWalletSDK({
-        appName: 'Veritas Villages',
-        appLogoUrl: window.location.origin + '/assets/logo.png'
-      });
-      const provider = sdk.makeWeb3Provider('https://public-node.testnet.rsk.co', 31);
+      const mod = await import('https://esm.sh/@coinbase/wallet-sdk@4.0.3');
+      const CoinbaseWalletSDK = mod.CoinbaseWalletSDK || mod.default;
+      const sdk = new CoinbaseWalletSDK({ appName: 'Veritas Villages' });
+      const provider = sdk.makeWeb3Provider();
       const accounts = await provider.request({ method: 'eth_requestAccounts' });
       await onWalletConnected(provider, accounts[0]);
     } catch (err) {
       console.error('Coinbase SDK error:', err);
-      if (err.code !== 4001) notify(t('err_cb_fail'), 'error');
+      if (err && err.code !== 4001) notify(t('err_cb_fail'), 'error');
     }
-  } else {
-    notify(t('err_cb_fail') + ' Install the Coinbase Wallet extension.', 'warning');
   }
 }
 
