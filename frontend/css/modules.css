@@ -224,11 +224,56 @@
   .sec-form{grid-template-columns:1fr}
 }
 @media(max-width:768px){
-  #app-sidebar{position:fixed;top:58px;left:0;z-index:99;transform:translateX(-100%);width:240px;height:calc(100dvh - 58px)}
-  body.sidebar-open #app-sidebar{transform:translateX(0)}
+  #app-sidebar{position:fixed;top:58px;left:0;z-index:99;transform:translateX(-100%);width:280px;max-width:85vw;height:calc(100dvh - 58px)}
+  body.sidebar-open #app-sidebar{transform:translateX(0);box-shadow:8px 0 32px rgba(0,0,0,.5)}
   #app-main{margin-left:0;width:100%}
   .btn-hamburger{display:block}
-  .module-section{padding:16px}
+  .module-section{padding:14px}
   .solar-grid{grid-template-columns:1fr}
   .mkt-grid{grid-template-columns:1fr}
+  /* Sidebar nav items are tap-friendly already (54px), keep caret 44px */
+  .nav-caret{min-width:44px;min-height:44px}
+  .nav-child{min-height:44px;padding:10px 12px;font-size:.82rem}
+  /* Chat — phone layout */
+  .chat-layout{height:calc(100dvh - 180px);min-height:420px;border-radius:var(--r-sm)}
+  .chat-input-bar{padding:10px 12px}
+  .chat-input-bar input{min-height:44px}
+  .chat-input-bar .btn-primary{min-height:44px}
+  /* Marketplace filters — scroll horizontally instead of wrapping into many rows */
+  .mkt-filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-inline:-4px;padding-inline:4px}
+  .mkt-filters::-webkit-scrollbar{display:none}
+  .mkt-filter-btn{flex-shrink:0;min-height:44px;padding:11px 18px}
+  /* Finance summary — single column on phones avoids cramped 2-up */
+  .fin-summary-grid{grid-template-columns:1fr;gap:10px}
+  .fin-card{padding:14px}
+  .fin-bar-label{width:90px;font-size:.7rem}
+  .fin-bar-val{width:64px;font-size:.68rem}
+  /* Solar */
+  .solar-summary-grid{grid-template-columns:1fr;gap:10px}
+  /* Security guest QR row stacks */
+  .guest-qr-section{flex-wrap:wrap}
+  /* Module headers — already hidden on mobile via styles.css when sub-tab bar present */
+  .module-header h2{font-size:1.25rem}
+  .module-header p{font-size:.78rem}
+  /* Comment input tap target */
+  .comment-form input{min-height:44px}
+  .comment-form .btn-sm{min-height:44px;padding:10px 16px}
+}
+@media(max-width:480px){
+  .module-section{padding:12px}
+  /* Water chart smaller bars */
+  .water-chart{height:160px;gap:4px}
+  .water-chart-val{font-size:.55rem}
+  .water-chart-label{font-size:.6rem}
+  /* Marketplace card */
+  .mkt-card-img{height:80px}
+  .mkt-emoji{font-size:2.4rem}
+  /* Announcements / events */
+  .event-card{gap:10px;padding:12px}
+  .event-date-badge{width:44px;height:44px}
+  /* Food cards full bleed */
+  .food-grid{grid-template-columns:1fr;gap:14px}
+  .food-card{padding:16px}
+  /* Rules */
+  .rule-card{padding:14px}
 }

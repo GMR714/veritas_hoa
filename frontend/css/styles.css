@@ -224,9 +224,9 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .subtab-group-icon{font-size:1.8rem;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);background:linear-gradient(135deg,rgba(27,107,125,.22),rgba(45,90,61,.15));border:1px solid rgba(27,107,125,.25);flex-shrink:0}
 .subtab-titles h2{font-family:'Playfair Display',serif;font-size:1.5rem;color:#fff;line-height:1.1;margin:0}
 .subtab-titles p{font-size:.82rem;color:var(--text-m);margin:2px 0 0}
-.subtab-tabs{display:flex;gap:6px;padding:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(12px);overflow-x:auto;scrollbar-width:none}
+.subtab-tabs{display:flex;gap:6px;padding:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(12px);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
 .subtab-tabs::-webkit-scrollbar{display:none}
-.subtab{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:none;border-radius:var(--r-sm);background:transparent;color:var(--text-d);font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s var(--ease);white-space:nowrap;flex-shrink:0;min-height:44px}
+.subtab{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:none;border-radius:var(--r-sm);background:transparent;color:var(--text-d);font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s var(--ease);white-space:nowrap;flex-shrink:0;min-height:44px;scroll-snap-align:start}
 .subtab:hover{background:rgba(255,255,255,.05);color:var(--text)}
 .subtab:focus-visible{outline:2px solid var(--teal-l);outline-offset:2px}
 .subtab.active{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;box-shadow:0 4px 14px rgba(27,107,125,.3)}
@@ -251,5 +251,83 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* ═══ RESPONSIVE ═══ */
 @media(min-width:600px){.admin-grid{grid-template-columns:1fr 1fr}.welcome-glass{padding:56px 48px 44px}}
-@media(max-width:480px){.header-titles h1{font-size:1rem}.header-tag{display:none}.logo-mark{width:34px;height:34px}.btn-glow{padding:8px 14px;font-size:.8rem}.welcome-glass{padding:32px 20px 28px}.welcome-glass h2{font-size:1.5rem}.welcome-features{grid-template-columns:1fr}.feed-section{padding:12px 14px}.idea-top{padding:14px}.form-row{flex-direction:column}.form-row .select-styled{width:100%}}
+
+/* Tablet & below */
+@media(max-width:768px){
+  .header-inner{padding:10px 14px}
+  .header-actions{gap:8px}
+  .btn-hamburger{min-width:44px;min-height:44px;display:flex!important;align-items:center;justify-content:center;font-size:1.4rem;padding:0}
+  .lang-switch{padding:2px 6px}
+  .lang-btn{min-width:44px;min-height:44px;padding:8px 10px;font-size:.78rem}
+  .btn-wallet-connected{min-height:44px;padding:10px 14px}
+  /* Sub-tab bar — tighter padding, fade-mask hint for horizontal scroll */
+  .subtab-bar{padding:14px 14px 0}
+  .subtab-head{gap:10px;margin-bottom:12px}
+  .subtab-group-icon{width:40px;height:40px;font-size:1.4rem}
+  .subtab-titles h2{font-size:1.2rem}
+  .subtab-titles p{font-size:.74rem}
+  .subtab-tabs{mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent)}
+  /* Avoid module-header competing with subtab-titles — module-header is redundant on mobile */
+  .subtab-bar + .module-section .module-header,
+  .subtab-bar ~ .module-section .module-header{display:none}
+  /* Touch targets */
+  .btn-sm,.btn-vote,.btn-for,.btn-against,.btn-promote,.btn-ghost,.btn-accent,.btn-primary{min-height:44px;padding-block:10px}
+  .btn-promote{font-size:.78rem;padding:10px 14px}
+  /* NFT strip + admin + guest banner — match section padding */
+  .nft-strip,.admin-panel,.guest-banner{margin:12px 14px}
+  .feed-layout{padding:16px 14px;gap:20px}
+  .feed-section{padding:16px 14px}
+  .panel-head h2{font-size:1.2rem}
+  /* Welcome steps — keep readable */
+  .welcome-steps{padding:14px;gap:8px}
+  .step-num{width:28px;height:28px;font-size:.85rem}
+  .step-text strong{font-size:.84rem}
+  .step-text span{font-size:.7rem}
+  /* Toast doesn't overflow */
+  .toast-stack{bottom:12px;width:calc(100% - 24px);max-width:none}
+}
+
+/* Phone */
+@media(max-width:480px){
+  .header-titles h1{font-size:1rem}
+  .header-tag{display:none}
+  .logo-mark{width:34px;height:34px}
+  .header-brand{gap:8px}
+  .btn-glow{padding:10px 14px;font-size:.78rem;min-height:44px}
+  .btn-glow span:not(:first-child){display:none}
+  .welcome-section{padding:14px;min-height:auto;padding-block:24px}
+  .welcome-glass{padding:28px 18px 24px}
+  .welcome-glass h2{font-size:1.45rem}
+  .welcome-glass p{font-size:.86rem;margin-bottom:20px}
+  .btn-hero{padding:14px 22px;font-size:.95rem;width:100%;justify-content:center}
+  .welcome-features{grid-template-columns:1fr}
+  .welcome-steps{margin-top:18px}
+  /* Idea form */
+  .form-row{flex-direction:column;align-items:stretch}
+  .form-row .select-styled,.form-row .btn-primary{width:100%}
+  .idea-top{padding:14px;gap:10px}
+  .vote-badge{width:46px;height:46px;font-size:1rem}
+  /* Idea/proposal action rows wrap nicely */
+  .idea-actions,.proposal-actions{padding:10px 14px;gap:6px}
+  .idea-actions select,.proposal-actions select,.idea-actions input[type="number"],.proposal-actions input[type="number"]{min-height:40px;font-size:.85rem}
+  /* Admin panel inputs full width */
+  .inline-form{flex-direction:column;align-items:stretch}
+  .inline-form .input-mini{width:100%!important}
+  .inline-form .btn-accent,.inline-form .label-suffix{align-self:center}
+  /* Sub-tab bar — even tighter on phone */
+  .subtab-bar{padding:12px 10px 0}
+  .subtab-tabs{padding:4px;gap:4px}
+  .subtab{padding:10px 14px;font-size:.82rem}
+  /* NFT chips smaller */
+  .nft-chip{min-width:110px;padding:12px 14px}
+}
+
+/* Very narrow (~360px) */
+@media(max-width:380px){
+  .header-actions{gap:6px}
+  .lang-switch{display:none}
+  .header-titles h1{font-size:.95rem}
+  .subtab-titles h2{font-size:1.1rem}
+  .subtab-group-icon{width:36px;height:36px;font-size:1.2rem}
+}
 
