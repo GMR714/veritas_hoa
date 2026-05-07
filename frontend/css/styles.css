@@ -226,7 +226,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .subtab-titles p{font-size:.82rem;color:var(--text-m);margin:2px 0 0}
 .subtab-tabs{display:flex;gap:6px;padding:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(12px);overflow-x:auto;scrollbar-width:none}
 .subtab-tabs::-webkit-scrollbar{display:none}
-.subtab{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:none;border-radius:var(--r-sm);background:transparent;color:var(--text-d);font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s var(--ease);white-space:nowrap;flex-shrink:0;min-height:40px}
+.subtab{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:none;border-radius:var(--r-sm);background:transparent;color:var(--text-d);font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s var(--ease);white-space:nowrap;flex-shrink:0;min-height:44px}
 .subtab:hover{background:rgba(255,255,255,.05);color:var(--text)}
 .subtab:focus-visible{outline:2px solid var(--teal-l);outline-offset:2px}
 .subtab.active{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;box-shadow:0 4px 14px rgba(27,107,125,.3)}

@@ -29,6 +29,9 @@ const i18n = {
     // Dynamic JS Text
     empty_nft: "No membership passes found.",
     no_nft: "No pass",
+    pass_label: "Pass",
+    voted_with: "Voted with",
+    voted: "Voted",
     credits: "credits",
     empty_ideas: "No ideas in the basket yet. Be the first! 🌱",
     votes: "votes",
@@ -81,6 +84,9 @@ const i18n = {
     // Dynamic JS Text
     empty_nft: "No se encontraron pases de miembro.",
     no_nft: "Sin pase",
+    pass_label: "Pase",
+    voted_with: "Votaste con",
+    voted: "Votaste",
     credits: "créditos",
     empty_ideas: "No hay ideas en la cesta aún. ¡Sé el primero! 🌱",
     votes: "votos",
@@ -271,7 +277,7 @@ function renderMyNFTs() {
   list.innerHTML = state.myNFTs.map(nft => {
     const isDemo = nft.id === 0 && guestMode;
     const chipClass = isDemo ? 'nft-chip demo-nft' : 'nft-chip';
-    const label = isDemo ? `🎭 ${t('guest_nft_label')}` : `NFT #${nft.id}`;
+    const label = isDemo ? `🎭 ${t('guest_nft_label')}` : `${t('pass_label')} #${nft.id}`;
     return `
     <div class="${chipClass}">
       <h4>${label}</h4>
@@ -281,7 +287,7 @@ function renderMyNFTs() {
   }).join('');
 
   select.innerHTML = state.myNFTs.map(nft => {
-    const label = (nft.id === 0 && guestMode) ? `🎭 ${t('guest_nft_label')} (${nft.credits} cr)` : `NFT #${nft.id} (${nft.credits} cr)`;
+    const label = (nft.id === 0 && guestMode) ? `🎭 ${t('guest_nft_label')} (${nft.credits} cr)` : `${t('pass_label')} #${nft.id} (${nft.credits} cr)`;
     return `<option value="${nft.id}">${label}</option>`;
   }).join('');
 }
@@ -294,7 +300,7 @@ function renderIdeaList() {
   }
 
   const nftOpts = state.myNFTs.length > 0
-    ? state.myNFTs.map(n => `<option value="${n.id}">NFT #${n.id}</option>`).join('')
+    ? state.myNFTs.map(n => `<option value="${n.id}">${t('pass_label')} #${n.id}</option>`).join('')
     : `<option value="">${t('no_nft')}</option>`;
 
   c.innerHTML = state.ideas.map((idea, index) => {
@@ -325,7 +331,7 @@ function renderIdeaList() {
     if (userVote) {
       html += `
         <div style="flex:1; display:flex; align-items:center; gap:8px;">
-          <span style="font-size:0.8rem; color:var(--olive-l);">✓ Voted with NFT #${userVote.nft_id} (${userVote.votes_allocated} votes)</span>
+          <span style="font-size:0.8rem; color:var(--olive-l);">✓ ${t('voted_with')} ${t('pass_label')} #${userVote.nft_id} (${userVote.votes_allocated} ${t('votes')})</span>
         </div>
         <button class="btn-sm btn-against" onclick="window.app.revokeIdeaVote(${idea.id}, ${userVote.nft_id})">${t('btn_revoke')}</button>
       `;
@@ -361,7 +367,7 @@ function renderProposalList() {
   const ended = state.proposals.filter(p => now > p.end_time);
 
   const nftOpts = state.myNFTs.length > 0
-    ? state.myNFTs.map(n => `<option value="${n.id}">NFT #${n.id}</option>`).join('')
+    ? state.myNFTs.map(n => `<option value="${n.id}">${t('pass_label')} #${n.id}</option>`).join('')
     : `<option value="">${t('no_nft')}</option>`;
 
   if (active.length === 0) {
@@ -396,7 +402,7 @@ function renderProposalList() {
         const choiceStr = userVote.choice === 1 ? t('tally_for') : (userVote.choice === 2 ? t('tally_against') : 'Abstain');
         html += `
           <div style="flex:1; display:flex; align-items:center; gap:8px;">
-            <span style="font-size:0.8rem; color:var(--olive-l);">✓ Voted ${choiceStr} (NFT #${userVote.nft_id})</span>
+            <span style="font-size:0.8rem; color:var(--olive-l);">✓ ${t('voted')} ${choiceStr} (${t('pass_label')} #${userVote.nft_id})</span>
           </div>
           <button class="btn-sm btn-against" onclick="window.app.revokePropVote(${p.id}, ${userVote.nft_id})">${t('btn_revoke')}</button>
         `;
