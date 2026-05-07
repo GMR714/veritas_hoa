@@ -212,10 +212,14 @@ function updateStaticTranslations() {
     const key = el.getAttribute('data-i18n-tip');
     const tipDict = {
       en: {
-        tip_my_passes: "Your blockchain-backed membership badges. They give you voting credits."
+        tip_my_passes: "Your blockchain-backed membership badges. They give you voting credits.",
+        tip_quadratic: "Smart voting: spend more credits to show stronger support. Each extra vote on the same idea costs more, so everyone's voice counts.",
+        tip_signin: "You'll be asked to approve a quick request in your wallet. It's free and just confirms it's really you."
       },
       es: {
-        tip_my_passes: "Tus credenciales de membresía respaldadas por blockchain. Te dan créditos para votar."
+        tip_my_passes: "Tus credenciales de membresía respaldadas por blockchain. Te dan créditos para votar.",
+        tip_quadratic: "Voto inteligente: gasta más créditos para mostrar más apoyo. Cada voto extra en la misma idea cuesta más, así todos tienen voz.",
+        tip_signin: "Tu billetera te pedirá aprobar una solicitud rápida. Es gratis y solo confirma que eres tú."
       }
     };
     if (tipDict[currentLang][key]) el.setAttribute('data-tip', tipDict[currentLang][key]);
