@@ -10,7 +10,7 @@ const routes = [
   { id: 'solar',        icon: '☀️', label: { en: 'Solar',           es: 'Solar' } },
   { id: 'water',        icon: '💧', label: { en: 'Water',           es: 'Agua' } },
   { id: 'chat',         icon: '💬', label: { en: 'Chat',            es: 'Chat' } },
-  { id: 'announcements',icon: '📢', label: { en: 'News & Events',   es: 'Novedades' } },
+  { id: 'announcements',icon: '📢', label: { en: 'Announcements & Events', es: 'Anuncios y Eventos' } },
   { id: 'marketplace',  icon: '🛒', label: { en: 'Marketplace',     es: 'Mercado' } },
   { id: 'security',     icon: '🔐', label: { en: 'Security',        es: 'Seguridad' } },
 ];

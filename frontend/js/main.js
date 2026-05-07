@@ -207,6 +207,20 @@ function updateStaticTranslations() {
     if (ariaDict[currentLang][key]) el.setAttribute('aria-label', ariaDict[currentLang][key]);
   });
 
+  // Update tooltips
+  document.querySelectorAll('[data-i18n-tip]').forEach(el => {
+    const key = el.getAttribute('data-i18n-tip');
+    const tipDict = {
+      en: {
+        tip_my_passes: "Your blockchain-backed membership badges. They give you voting credits."
+      },
+      es: {
+        tip_my_passes: "Tus credenciales de membresía respaldadas por blockchain. Te dan créditos para votar."
+      }
+    };
+    if (tipDict[currentLang][key]) el.setAttribute('data-tip', tipDict[currentLang][key]);
+  });
+
   // Update placeholders
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const key = el.getAttribute('data-i18n-ph');
