@@ -34,7 +34,7 @@ function renderWater() {
   const avgUsage = monthUsage.length ? monthUsage.reduce((s, u) => s + u.usage_liters, 0) / monthUsage.length : 0;
   const usageRows = monthUsage.sort((a, b) => b.usage_liters - a.usage_liters).map(u => {
     const aboveAvg = u.usage_liters > avgUsage * 1.2;
-    return `<tr class="${aboveAvg ? 'water-high' : ''}"><td>${u.lot_number}</td><td>${u.resident_name}</td><td>${(u.usage_liters / 1000).toFixed(1)}k L</td><td>R$ ${u.cost.toFixed(2)}</td><td>${aboveAvg ? '⚠️ High' : '✅ Normal'}</td></tr>`;
+    return `<tr class="${aboveAvg ? 'water-high' : ''}"><td>${u.lot_number}</td><td>${u.resident_name}</td><td>${(u.usage_liters / 1000).toFixed(1)}k L</td><td>$${Number(u.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td><td>${aboveAvg ? '⚠️ High' : '✅ Normal'}</td></tr>`;
   }).join('');
 
   container.innerHTML = `

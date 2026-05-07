@@ -9,7 +9,7 @@ async function fetchFinances() {
   } catch (e) { console.error('Finances error:', e); }
 }
 
-function formatBRL(val) { return 'R$ ' + val.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); }
+function formatUSD(val) { return '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 function renderFinances() {
   const container = document.getElementById('finances-content');
@@ -30,7 +30,7 @@ function renderFinances() {
       <div class="fin-bar-track">
         <div class="fin-bar-fill" style="width:${(total / maxCat * 100)}%; background:${catColors[i % catColors.length]}"></div>
       </div>
-      <span class="fin-bar-val">${formatBRL(total)}</span>
+      <span class="fin-bar-val">${formatUSD(total)}</span>
     </div>`).join('');
 
   // Payment status
@@ -39,7 +39,7 @@ function renderFinances() {
     <tr class="pay-row pay-${p.status}">
       <td>${p.lot_number}</td>
       <td>${p.resident_name}</td>
-      <td>${formatBRL(p.amount)}</td>
+      <td>${formatUSD(p.amount)}</td>
       <td>${p.due_date}</td>
       <td><span class="pay-badge pay-badge-${p.status}">${statusIcon[p.status]} ${p.status}</span></td>
     </tr>`).join('');
@@ -49,15 +49,15 @@ function renderFinances() {
     <div class="fin-summary-grid">
       <div class="fin-card fin-card-balance glass-card">
         <div class="fin-card-icon">💎</div>
-        <div class="fin-card-info"><span class="fin-card-label">Total Balance</span><span class="fin-card-value">${formatBRL(s.balance || 0)}</span></div>
+        <div class="fin-card-info"><span class="fin-card-label">Total Balance</span><span class="fin-card-value">${formatUSD(s.balance || 0)}</span></div>
       </div>
       <div class="fin-card glass-card">
         <div class="fin-card-icon">📈</div>
-        <div class="fin-card-info"><span class="fin-card-label">Total Income</span><span class="fin-card-value fin-green">${formatBRL(s.totalIncome || 0)}</span></div>
+        <div class="fin-card-info"><span class="fin-card-label">Total Income</span><span class="fin-card-value fin-green">${formatUSD(s.totalIncome || 0)}</span></div>
       </div>
       <div class="fin-card glass-card">
         <div class="fin-card-icon">📉</div>
-        <div class="fin-card-info"><span class="fin-card-label">Total Expenses</span><span class="fin-card-value fin-red">${formatBRL(s.totalExpense || 0)}</span></div>
+        <div class="fin-card-info"><span class="fin-card-label">Total Expenses</span><span class="fin-card-value fin-red">${formatUSD(s.totalExpense || 0)}</span></div>
       </div>
       <div class="fin-card glass-card">
         <div class="fin-card-icon">👥</div>

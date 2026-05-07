@@ -84,7 +84,7 @@ function seedAll() {
       ['Guest Access', 'Security', 'All guests must be registered 24h in advance. Maximum 10 guests per event. Guest passes valid for 24 hours unless extended.'],
       ['Common Area Booking', 'Common Areas', 'Amphitheater and padel courts can be booked up to 7 days in advance. Maximum 2 hours per booking. Cancel 4h before.'],
       ['Solar Panel Maintenance', 'Infrastructure', 'Annual inspection required for all solar installations. Community handles shared inverter maintenance. Individual panel cleaning monthly.'],
-      ['Water Conservation', 'Infrastructure', 'During dry season (Jun-Sep), garden watering limited to even/odd days. Report leaks immediately. Community well usage tracked monthly.'],
+      ['Water Conservation', 'Infrastructure', 'Please report leaks immediately. Garden watering is encouraged in the early morning or evening to reduce evaporation. Community well usage is tracked monthly.'],
       ['Music Studio', 'Common Areas', 'Music studio available 9 AM - 9 PM. Sessions limited to 2 hours. Sound insulation must remain intact. No outside equipment without approval.'],
       ['Shuttle Bus', 'Transport', 'Community shuttle runs Mon-Sat. Morning departure 7:30 AM, return 6:00 PM. Book seats 24h in advance via app.'],
     ];
@@ -217,7 +217,7 @@ function seedAll() {
     });
 
     const alerts = [
-      ['drought', '⚠️ Dry season started. Water rationing rules in effect: even lots water on even days, odd lots on odd days.', 'warning'],
+      ['conservation', '💧 Water-saving tips: water gardens in the early morning, fix dripping taps promptly, and use the community car wash station to save at home.', 'info'],
       ['high_usage', '🔴 Lot C-03 usage 40% above community average. Please review for leaks.', 'critical'],
       ['conservation', '💧 Community saved 12% water compared to last month. Great job!', 'info'],
     ];
@@ -255,7 +255,7 @@ function seedAll() {
       ['Community BBQ This Saturday!', 'Join us for the monthly community BBQ at the amphitheater. Bring a side dish to share. Starts at noon!', 'event', 'normal', 'Admin'],
       ['Scheduled Power Maintenance', 'Power will be off on May 8th from 2-4 PM for transformer maintenance. Please prepare accordingly.', 'maintenance', 'high', 'Admin'],
       ['New Padel Court Hours', 'Starting this month, padel courts are open from 6 AM to 10 PM (extended from 9 PM).', 'general', 'normal', 'Admin'],
-      ['🚨 Water Main Repair', 'Emergency repair on the main water line. Water may be intermittent today between 10 AM and 2 PM.', 'emergency', 'urgent', 'Admin'],
+      ['Community Garden Expansion', 'We are adding 6 new garden plots near the amphitheater. Sign up in the app to reserve your spot — first come, first served!', 'general', 'normal', 'Admin'],
       ['Music Studio Renovated!', 'The community music studio has been renovated with new acoustic panels and a drum set. Book your sessions!', 'general', 'normal', 'Ricardo Ferreira'],
       ['Shuttle Bus Schedule Change', 'The shuttle will not run on May 15th (holiday). Regular service resumes May 16th.', 'general', 'normal', 'Admin'],
     ];
