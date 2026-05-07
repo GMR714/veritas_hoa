@@ -81,7 +81,7 @@ function navigateTo(routeId, updateHash = true) {
   // Scroll to top of content area when switching
   const main = document.getElementById('app-main');
   if (main) main.scrollTop = 0;
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (_) { window.scrollTo(0, 0); }
 
   if (onRouteChange) onRouteChange(routeId);
 }

@@ -123,10 +123,10 @@
             <div class="admin-header-bar"><span class="admin-badge">⚙️ <span data-i18n="admin_panel">Admin Panel</span></span></div>
             <div class="admin-grid">
               <div class="admin-block">
-                <label data-i18n="admin_mint_lbl">Mint Member NFT</label>
+                <label data-i18n="admin_mint_lbl">Issue Member Pass</label>
                 <div class="inline-form">
                   <input type="text" id="admin-mint-address" placeholder="0x... address">
-                  <button id="btn-admin-mint" class="btn-accent" data-i18n="btn_mint">Mint</button>
+                  <button id="btn-admin-mint" class="btn-accent" data-i18n="btn_mint">Issue</button>
                 </div>
               </div>
               <div class="admin-block">
@@ -150,7 +150,7 @@
 
           <div id="my-nfts-section" class="nft-strip glass-card" style="display:none;">
             <div class="nft-strip-head">
-              <span class="strip-label">🪪 <span data-i18n="my_nfts">My NFTs</span></span>
+              <span class="strip-label has-tooltip" data-tip="Your blockchain-backed membership badges. They give you voting credits.">🪪 <span data-i18n="my_nfts">My Passes</span></span>
               <code id="user-address" class="addr-badge"></code>
             </div>
             <div id="my-nfts-list" class="nft-scroll"></div>
@@ -162,7 +162,7 @@
               <input type="text" id="idea-title" placeholder="Your idea title..." class="input-lg" data-i18n-ph="ph_idea_title">
               <textarea id="idea-desc" placeholder="Describe your suggestion..." rows="3" data-i18n-ph="ph_idea_desc"></textarea>
               <div class="form-row">
-                <select id="idea-nft-select" class="select-styled"><option value="" data-i18n="opt_select_nft">Select your NFT</option></select>
+                <select id="idea-nft-select" class="select-styled"><option value="" data-i18n="opt_select_nft">Select your pass</option></select>
                 <button id="btn-submit-idea" class="btn-primary">🚀 <span data-i18n="btn_submit_idea">Submit Idea</span></button>
               </div>
             </div>
