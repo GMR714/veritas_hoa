@@ -106,7 +106,7 @@ const i18n = {
     // Notifications
     err_no_wallet: "¡No se detectó ninguna billetera! Instala MetaMask o usa WalletConnect.",
     err_metamask: "¡MetaMask no encontrado! Instala la extensión o usa WalletConnect.",
-    msg_sign: "Firma el mensaje en tu billetera (gratis)...",
+    msg_sign: "Aprueba la solicitud en tu billetera (gratis, sin gas)...",
     msg_check_nft: "Verificando tu pase de miembro...",
     msg_connected: "¡Conectado! Todas las acciones son gratis.",
     msg_disconnect: "Desconectado.",
@@ -764,7 +764,6 @@ window.app = {
     document.getElementById(`btn-lang-${lang}`).classList.add('active');
     renderSidebar(lang);
     renderSubtabs(lang);
-    updateStaticTranslations();
     refreshUI();
   },
 
