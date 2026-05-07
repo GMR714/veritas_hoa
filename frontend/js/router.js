@@ -50,6 +50,25 @@ function getGroupForRoute(routeId) {
   return groups.find(g => g.members.includes(routeId));
 }
 
+const EXPANDED_KEY = 'vv_sidebar_expanded';
+function loadExpanded() {
+  try {
+    const raw = sessionStorage.getItem(EXPANDED_KEY);
+    if (raw) return new Set(JSON.parse(raw));
+  } catch (_) {}
+  return new Set(groups.map(g => g.id));
+}
+let expandedGroups = loadExpanded();
+function saveExpanded() {
+  try { sessionStorage.setItem(EXPANDED_KEY, JSON.stringify([...expandedGroups])); } catch (_) {}
+}
+function toggleGroup(groupId) {
+  if (expandedGroups.has(groupId)) expandedGroups.delete(groupId);
+  else expandedGroups.add(groupId);
+  saveExpanded();
+  renderSidebar(currentLang);
+}
+
 function initRouter(callback) {
   onRouteChange = callback;
   window.addEventListener('hashchange', handleHashChange);
@@ -98,19 +117,53 @@ function renderSidebar(lang = currentLang) {
   if (!nav) return;
   const currentGroup = getGroupForRoute(currentRoute);
 
+  // Always keep the current group expanded so the active page is visible
+  if (currentGroup && !expandedGroups.has(currentGroup.id)) {
+    expandedGroups.add(currentGroup.id);
+    saveExpanded();
+  }
+
   nav.innerHTML = groups.map(g => {
     const isActive = currentGroup && g.id === currentGroup.id;
     const desc = g.desc[lang] || g.desc.en;
+    const hasChildren = g.members.length > 1;
+    const isExpanded = expandedGroups.has(g.id);
+    const caret = hasChildren
+      ? `<button class="nav-caret ${isExpanded ? 'expanded' : ''}"
+                 onclick="event.stopPropagation();window.router.toggleGroup('${g.id}')"
+                 aria-label="${isExpanded ? 'Collapse' : 'Expand'} ${g.label[lang] || g.label.en}"
+                 aria-expanded="${isExpanded}">▸</button>`
+      : '';
+    const children = (hasChildren && isExpanded)
+      ? `<div class="nav-children" role="group">
+          ${g.members.map(m => {
+            const r = routes.find(x => x.id === m);
+            const childActive = m === currentRoute;
+            return `<button class="nav-child ${childActive ? 'active' : ''}"
+                            onclick="window.router.navigateTo('${m}')"
+                            ${childActive ? 'aria-current="page"' : ''}>
+              <span class="nav-child-icon" aria-hidden="true">${r.icon}</span>
+              <span class="nav-child-label">${r.label[lang] || r.label.en}</span>
+            </button>`;
+          }).join('')}
+        </div>`
+      : '';
     return `
-      <button class="nav-item ${isActive ? 'active' : ''}" data-group="${g.id}"
-              onclick="window.router.navigateToGroup('${g.id}')"
-              aria-label="${g.label[lang] || g.label.en}">
-        <span class="nav-icon" aria-hidden="true">${g.icon}</span>
-        <span class="nav-text">
-          <span class="nav-label">${g.label[lang] || g.label.en}</span>
-          <span class="nav-sublabel">${desc}</span>
-        </span>
-      </button>`;
+      <div class="nav-group">
+        <div class="nav-item-row">
+          <button class="nav-item ${isActive ? 'active' : ''}" data-group="${g.id}"
+                  onclick="window.router.navigateToGroup('${g.id}')"
+                  aria-label="${g.label[lang] || g.label.en}">
+            <span class="nav-icon" aria-hidden="true">${g.icon}</span>
+            <span class="nav-text">
+              <span class="nav-label">${g.label[lang] || g.label.en}</span>
+              <span class="nav-sublabel">${desc}</span>
+            </span>
+          </button>
+          ${caret}
+        </div>
+        ${children}
+      </div>`;
   }).join('');
 }
 
@@ -159,5 +212,5 @@ function renderSubtabs(lang = currentLang) {
 
 function getCurrentRoute() { return currentRoute; }
 
-window.router = { initRouter, navigateTo, navigateToGroup, renderSidebar, renderSubtabs, getCurrentRoute, routes, groups };
-export { initRouter, navigateTo, navigateToGroup, renderSidebar, renderSubtabs, getCurrentRoute, routes, groups };
+window.router = { initRouter, navigateTo, navigateToGroup, toggleGroup, renderSidebar, renderSubtabs, getCurrentRoute, routes, groups };
+export { initRouter, navigateTo, navigateToGroup, toggleGroup, renderSidebar, renderSubtabs, getCurrentRoute, routes, groups };
