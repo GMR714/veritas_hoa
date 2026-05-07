@@ -69,10 +69,26 @@ function toggleGroup(groupId) {
   renderSidebar(currentLang);
 }
 
+function closeMobileSidebar() {
+  if (window.innerWidth <= 768) {
+    document.body.classList.remove('sidebar-open');
+  }
+}
+
 function initRouter(callback) {
   onRouteChange = callback;
   window.addEventListener('hashchange', handleHashChange);
   handleHashChange();
+
+  // Inject sidebar backdrop for tap-outside-to-close on mobile
+  if (!document.getElementById('sidebar-backdrop')) {
+    const backdrop = document.createElement('div');
+    backdrop.id = 'sidebar-backdrop';
+    backdrop.addEventListener('click', () => {
+      document.body.classList.remove('sidebar-open');
+    });
+    document.body.appendChild(backdrop);
+  }
 }
 
 function handleHashChange() {
@@ -87,6 +103,7 @@ function navigateTo(routeId, updateHash = true) {
   const route = routes.find(r => r.id === routeId);
   if (!route) return;
 
+  closeMobileSidebar();
   currentRoute = routeId;
   if (updateHash) window.location.hash = routeId;
 
@@ -108,6 +125,7 @@ function navigateTo(routeId, updateHash = true) {
 function navigateToGroup(groupId) {
   const g = groups.find(x => x.id === groupId);
   if (!g) return;
+  closeMobileSidebar();
   navigateTo(g.members[0]);
 }
 

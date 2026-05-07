@@ -223,6 +223,12 @@
   .solar-summary-grid{grid-template-columns:1fr 1fr 1fr}
   .sec-form{grid-template-columns:1fr}
 }
+/* Sidebar backdrop — visible only on mobile when drawer is open */
+#sidebar-backdrop{display:none;position:fixed;inset:0;z-index:98;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+@media(max-width:768px){
+  body.sidebar-open #sidebar-backdrop{display:block}
+}
+
 @media(max-width:768px){
   #app-sidebar{position:fixed;top:58px;left:0;z-index:99;transform:translateX(-100%);width:280px;max-width:85vw;height:calc(100dvh - 58px)}
   body.sidebar-open #app-sidebar{transform:translateX(0);box-shadow:8px 0 32px rgba(0,0,0,.5)}
